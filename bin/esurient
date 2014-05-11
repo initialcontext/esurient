@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+function green() {
+  echo -e "\x1B[32m"
+}
+
+function white() {
+  echo -e "\x1B[37m"
+}
+
+function off() {
+  echo -e "\x1B[0m"
+}
+
+function usage() {
+  green
+  echo '[*] '
+  white
+  echo 'Esurient Database ETL Ingest Tool'
+  green
+  echo '[*] '
+  white
+  echo 'STUB: This will generate classpath, accept command-line args, and launch an Esurient job'
+  off
+  echo
+  echo
+  exit 0
+}
+
+usage
+
