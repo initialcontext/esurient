@@ -7,7 +7,7 @@ import org.apache.hadoop.util.Progressable
 import org.apache.hadoop.io.NullWritable
 
 import com.ereisman.esurient.hadoop.io.EsurientInputSplit
-import com.ereisman.esurient.db.EsurientTask
+import com.ereisman.esurient.EsurientTask
 
 
 /**

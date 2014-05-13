@@ -72,7 +72,7 @@
             <launchers>
               <launcher>
                 <id>main</id>
-                <mainClass>com.ereisman.esurient.EsurientTool</mainClass>
+                <mainClass>com.ereisman.esurient.hadoop.EsurientTool</mainClass>
                 <jvmArgs>
                   <jvmArg>-Xms64M</jvmArg>
                   <jvmArg>-Xmx1G</jvmArg>

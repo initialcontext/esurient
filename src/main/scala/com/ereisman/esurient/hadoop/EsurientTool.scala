@@ -1,4 +1,4 @@
-package com.ereisman.esurient
+package com.ereisman.esurient.hadoop
 
 
 import org.apache.hadoop.util.{Tool,ToolRunner}
