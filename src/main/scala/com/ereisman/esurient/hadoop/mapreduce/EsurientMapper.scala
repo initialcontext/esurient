@@ -8,7 +8,8 @@ import org.apache.hadoop.io.NullWritable
 
 import com.ereisman.esurient.hadoop.io.EsurientInputSplit
 import com.ereisman.esurient.EsurientTask
-import com.ereisman.esurient.db.EsurientEtlTask
+// until we publish artifact, put user-defined task classes in here and compile together
+import com.ereisman.esurient.userdefined._
 
 /**
  * A Hadoop Mapper subclass to act as a wrapper for the ETL process we will execute.

@@ -17,25 +17,22 @@ object EsurientTask {
  * Like any Hadoop-based task, the user code _must_ remember to call progress()
  * often between any compute heavy or blocking operations to signal task health.
  */
-abstract class EsurientTask() {
+abstract class EsurientTask {
   // horrible hack because Scala 2.9.x reflection is not really a thing
   final var context: EsurientTask.Context = null
 
   // this should _only_ ever be called by the framework
   final def init(ctx: EsurientTask.Context): EsurientTask = {
     context = ctx // save this for subclasses to access
-    initialize
-    this
+    this // return 'this' for the EsurientMapper (framework) to hold on to
   }
 
   /**
-   * Users should implement this method to do their init work. This is called by
-   * the framework once the Mapper#Context has been handed off to the EsurientTask.
-   */
-  def initialize: Unit
-
-  /**
    * Execute is called by the framework when we're ready to do stuff.
+   *
+   * An EsurientTask.Context (inlcuding the Hadoop job context, plus Hadoop Configuration,
+   * plus any user task-specific metadata your task needs to run, plus unique task ID)
+   * will be available as 'context' for you to extract setup data from.
    */
   def execute: Unit
 
