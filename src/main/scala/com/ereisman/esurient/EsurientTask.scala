@@ -5,7 +5,7 @@ import org.apache.hadoop.mapreduce.Mapper
 
 object EsurientTask {
  // lets hide this ugly thing
- type EsurientContext = Mapper[NullWritable, NullWritable, NullWritable, NullWritable]#Context
+ type Context = Mapper[NullWritable, NullWritable, NullWritable, NullWritable]#Context
 }
 
 /**
@@ -19,10 +19,10 @@ object EsurientTask {
  */
 abstract class EsurientTask() {
   // horrible hack because Scala 2.9.x reflection is not really a thing
-  var context: EsurientTask.EsurientContext = null
+  final var context: EsurientTask.Context = null
 
   // this should _only_ ever be called by the framework
-  final def init(ctx: EsurientTask.EsurientContext): EsurientTask = {
+  final def init(ctx: EsurientTask.Context): EsurientTask = {
     context = ctx // save this for subclasses to access
     initialize
     this
