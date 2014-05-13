@@ -1,7 +1,11 @@
 package com.ereisman.esurient
 
+import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapreduce.Mapper
+
 object EsurientTask {
- type EsurientContext = org.apache.hadoop.mapreduce.Mapper[NullWritable, NullWritable, NullWritable, NullWritable]#Context
+ // lets hide this ugly thing
+ type EsurientContext = Mapper[NullWritable, NullWritable, NullWritable, NullWritable]#Context
 }
 
 /**
@@ -13,9 +17,31 @@ object EsurientTask {
  * Like any Hadoop-based task, the user code _must_ remember to call progress()
  * often between any compute heavy or blocking operations to signal task health.
  */
-abstract class EsurientTask(val context: EsurientTask.EsurientContext) {
+abstract class EsurientTask() {
+  // horrible hack because Scala 2.9.x reflection is not really a thing
+  var context: EsurientTask.EsurientContext = null
 
+  // this should _only_ ever be called by the framework
+  final def init(ctx: EsurientTask.EsurientContext): EsurientTask = {
+    context = ctx // save this for subclasses to access
+    initialize
+    this
+  }
+
+  /**
+   * Users should implement this method to do their init work. This is called by
+   * the framework once the Mapper#Context has been handed off to the EsurientTask.
+   */
+  def initialize: Unit
+
+  /**
+   * Execute is called by the framework when we're ready to do stuff.
+   */
   def execute: Unit
 
-  def progress = context.progress
+  /**
+   * Users should call progress frequently in between any long computations or blocking calls.
+   * Signals task health back to the Hadoop cluster.
+   */
+  final def progress = if (context != null) context.progress
 }

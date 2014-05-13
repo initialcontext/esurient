@@ -8,22 +8,20 @@ import org.apache.hadoop.io.NullWritable
 
 import com.ereisman.esurient.hadoop.io.EsurientInputSplit
 import com.ereisman.esurient.EsurientTask
-import com.ereisman.esurient.EsurientEtlTask
+import com.ereisman.esurient.db.EsurientEtlTask
 
 /**
  * A Hadoop Mapper subclass to act as a wrapper for the ETL process we will execute.
  */
 class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, NullWritable] {
-  type MapCtx = Mapper[NullWritable, NullWritable, NullWritable, NullWritable]#Context
   // the Task that will be executed by the Esurient framework
   var esurientTask: EsurientTask = null
 
-  override def run(context: MapCtx): Unit = {
+  // exceptions will (and should) propagate if they made it this far
+  override def run(context: EsurientTask.EsurientContext): Unit = {
     try {
       setup(context)
       if (context.nextKeyValue()) esurientTask.execute
-    } catch (Exception propagatedUp) {
-      throw propagatedUp
     } finally {
       cleanup(context)
     } 
@@ -37,11 +35,11 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    *
    * @param context the Mapper#Context for this job
    */
-  override def setup(context: MapCtx): Unit = {
+  override def setup(context: EsurientTask.EsurientContext): Unit = {
     injectTaskIdentityMetadata(context)
-    esurientTask = conf.get("esurient.task.class.name") match {
+    esurientTask = context.getConfiguration.get("esurient.task.class.name") match {
       case klazz: String => instantiateUserDefinedTask(context)
-      case _             => new EsurientEtlTask(context)
+      case _             => (new EsurientEtlTask).init(context)
     }
   }
 
@@ -53,9 +51,9 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    * @param context the job context, including a Hadoop Configuration that will
    *                provide unique task id and task metadata.
    */
-  def instantiateUserDefinedTask(context: MapCtx): EsurientTask = {
-    val clsName = context.getConfiguration("esurient.this.task.id")
-    Class.forName(clsName).getConstructor(Array[Class](classOf[Configuration]))(context)
+  def instantiateUserDefinedTask(context: EsurientTask.EsurientContext): EsurientTask = {
+    val clsName = context.getConfiguration.get("esurient.this.task.id")
+    Class.forName(clsName).newInstance.asInstanceOf[EsurientTask].init(context)
   }
 
   /**
@@ -67,13 +65,13 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    * @param context the Hadoop Mapper#Context which wraps the Hadoop Configuration
    *                we want to inject the identity information into.
    */
-  def injectTaskIdentityMetadata(context: MapCtx): Unit = {
+  def injectTaskIdentityMetadata(context: EsurientTask.EsurientContext): Unit = {
     val taskId = context.getInputSplit.asInstanceOf[EsurientInputSplit].splitId
     val taskCount = context.getInputSplit.asInstanceOf[EsurientInputSplit].numSplits
-    context.getConfiguration.set("esurient.this.task.id", taskId)
-    context.getConfiguration.set("esurient.task.count", taskCount)
+    context.getConfiguration.setInt("esurient.this.task.id", taskId)
+    context.getConfiguration.setInt("esurient.task.count", taskCount)
   }
 
-  override def map(dummyK: NullWritable, dummyV: NullWritable, context: MapCtx): Unit = { /* no-op */ }
-  override def cleanup(context: MapCtx): Unit = { /* do some Hadoop-side cleanup here if needed */ }
+  override def map(dummyK: NullWritable, dummyV: NullWritable, context: EsurientTask.EsurientContext): Unit = { /* no-op */ }
+  override def cleanup(context: EsurientTask.EsurientContext): Unit = { /* do some Hadoop-side cleanup here if needed */ }
 }
