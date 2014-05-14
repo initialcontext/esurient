@@ -5,7 +5,6 @@ import org.apache.hadoop.conf.Configuration
 
 import org.apache.log4j.Logger
 
-import com.ereisman.esurient.hadoop.io.EsurientInputSplit
 import com.ereisman.esurient.db.{Database,DatabaseFactory}
 
 
