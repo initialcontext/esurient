@@ -9,7 +9,6 @@ object EsurientConstants {
     val ES_SHARDED_DB                         = "esurient.sharded.db"
     // to be combined with taskId
     val ES_TASK                               = "esurient.task."
-    val ES_NUM_TASKS                          = "esurient.num.tasks"
     val ES_OUTPUT_PATH                        = "esurient.output.path"
     val ES_TASK_CLASS_NAME                    = "esurient.task.class.name"
     val ES_TASK_AUTO_HEARTBEAT                = "esurient.task.auto.heartbeat"
@@ -18,7 +17,7 @@ object EsurientConstants {
     val ES_TASK_AUTO_HEARTBEAT_MILLIS         = "esurient.task.auto.heartbeat.millis"
 
     // Hadoop Configuration Default Values /////////////////////////
-    val ES_NUM_TASKS_DEFAULT                  = 20
+    val ES_TASK_COUNT_DEFAULT                  = 20
     val ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT = 8000
 
     // Misc constants //////////////////////////////////////////////

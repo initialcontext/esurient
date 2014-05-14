@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import com.ereisman.esurient.hadoop.io.EsurientInputSplit
 import com.ereisman.esurient.EsurientTask
+import com.ereisman.esurient.EsurientConstants._
 // until we publish artifact, put user-defined task classes in here and compile together
 import com.ereisman.esurient.userdefined._
 
@@ -45,7 +46,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
   override def setup(context: EsurientTask.Context): Unit = {
     injectTaskIdentityMetadata(context)
     checkAutoHeartbeatSelected(context)
-    esurientTask = context.getConfiguration.get("esurient.task.class.name") match {
+    esurientTask = context.getConfiguration.get(ES_TASK_CLASS_NAME) match {
       case klazz: String => instantiateUserDefinedTask(context)
       case _             => (new EsurientDefaultTask).init(context)
     }
@@ -56,7 +57,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    * then we can auto-heartbeat at a fixed interval in a background thread.
    */
   def checkAutoHeartbeatSelected(context: EsurientTask.Context): Unit = {
-    context.getConfiguration.getBoolean("esurient.task.auto.heartbeat", false) match {
+    context.getConfiguration.getBoolean(ES_TASK_AUTO_HEARTBEAT, false) match {
       case true => new EsurientAutomaticHeartbeater(context, done).start
       case _    => Unit
     }
@@ -71,7 +72,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    *                provide unique task id and task metadata.
    */
   def instantiateUserDefinedTask(context: EsurientTask.Context): EsurientTask = {
-    val clsName = context.getConfiguration.get("esurient.this.task.id")
+    val clsName = context.getConfiguration.get(ES_THIS_TASK_ID)
     Class.forName(clsName).newInstance.asInstanceOf[EsurientTask].init(context)
   }
 
@@ -87,16 +88,27 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
   def injectTaskIdentityMetadata(context: EsurientTask.Context): Unit = {
     val taskId = context.getInputSplit.asInstanceOf[EsurientInputSplit].splitId
     val taskCount = context.getInputSplit.asInstanceOf[EsurientInputSplit].numSplits
-    context.getConfiguration.setInt("esurient.this.task.id", taskId)
-    context.getConfiguration.setInt("esurient.task.count", taskCount)
+    context.getConfiguration.setInt(ES_THIS_TASK_ID, taskId)
+    context.getConfiguration.setInt(ES_TASK_COUNT, taskCount)
   }
 
   override def map(dummyK: NullWritable, dummyV: NullWritable, context: EsurientTask.Context): Unit = { /* no-op */ }
   override def cleanup(context: EsurientTask.Context): Unit = { /* do some Hadoop-side cleanup here if needed */ }
 }
 
+/**
+ * Call progress periodically on a timer to keep the Mapper task active
+ * unless an exception is propagated all the way back to the top level or
+ * the job completes some other way.
+ *
+ * @param context metadata about the task and the underlying Hadoop job.
+ *
+ * @param done allows the parent process (the job) to ensure this heartbeat
+ *             thread is eliminated if it throws an exception or completes successfully.
+ */
 class EsurientAutomaticHeartbeater(context: EsurientTask.Context, done: AtomicBoolean) extends java.lang.Thread {
-  val heartbeatMillis = context.getConfiguration.getLong("esurient.task.auto.heartbeat.millis", 8000)
+  val heartbeatMillis = context.getConfiguration
+    .getLong(ES_TASK_AUTO_HEARTBEAT_MILLIS, ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT)
 
   override def run(): Unit = {
     while (!done.get) {

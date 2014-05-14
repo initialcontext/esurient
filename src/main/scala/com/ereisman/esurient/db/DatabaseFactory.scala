@@ -3,6 +3,8 @@ package com.ereisman.esurient.db
 
 import org.apache.hadoop.conf.Configuration
 
+import com.ereisman.esurient.EsurientConstants._
+
 
 object DatabaseFactory {
 
@@ -14,8 +16,8 @@ object DatabaseFactory {
    * @return a Database object to manage the ETL task.
    */
   def getDatabase(taskId: Int, conf: Configuration): Database = {
-    conf.get("esurient.db.type", "ERROR_NO_DB_TYPE_SET") match {
-      case "mysql"      => conf.getBoolean("esurient.sharded.db", false) match {
+    conf.get(ES_DB_TYPE, ERROR_NO_DB_TYPE_SET) match {
+      case "mysql"      => conf.getBoolean(ES_SHARDED_DB, false) match {
         case true          => new ShardedMySqlDatabase(taskId, conf)
         case _             => new MySqlDatabase(taskId, conf)
       }

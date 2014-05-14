@@ -6,6 +6,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.fs.Path
 
+import com.ereisman.esurient.EsurientConstants._
 
 /**
  * A dummy class used to fake out Hadoop so that we can run our
@@ -23,7 +24,7 @@ class EsurientOutputFormat extends OutputFormat[NullWritable, NullWritable] {
 
   // TODO: check conf fields and optionally change the committer to something more useful!
   override def getOutputCommitter(tac: TaskAttemptContext): OutputCommitter = {
-    val outputPath = tac.getConfiguration.get("esurient.output.path", EsurientOutputFormat.DEFAULT_OUTPUT_DIR)
+    val outputPath = tac.getConfiguration.get(ES_OUTPUT_PATH, EsurientOutputFormat.DEFAULT_OUTPUT_DIR)
     new FileOutputCommitter(new Path(outputPath), tac)
   }
 
