@@ -57,7 +57,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    * then we can auto-heartbeat at a fixed interval in a background thread.
    */
   def checkAutoHeartbeatSelected(context: EsurientTask.Context): Unit = {
-    context.getConfiguration.getBoolean(ES_TASK_AUTO_HEARTBEAT, false) match {
+    context.getConfiguration.getBoolean(ES_TASK_AUTO_HEARTBEAT, true) match {
       case true => new EsurientAutomaticHeartbeater(context, done).start
       case _    => Unit
     }
