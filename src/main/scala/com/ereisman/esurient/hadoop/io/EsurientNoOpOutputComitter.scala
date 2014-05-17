@@ -3,7 +3,7 @@ package com.ereisman.esurient.hadoop.io
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.{JobContext,TaskAttemptContext}
 import org.apache.hadoop.mapreduce.OutputCommitter
-import java.io.{DataInput,DataOutput}
+
 
 /**
  * Dummy class to fake out Hadoop so we can ask for a
@@ -13,7 +13,7 @@ import java.io.{DataInput,DataOutput}
  * (like testing) that we don't want any output at all.
  * "real" jobs might use Hadoop's FileOutputCommitter etc.
  */
-class EsurientNoOpOutputComitter extends OutputCommitter {
+class EsurientNoOpOutputCommitter extends OutputCommitter {
 
   override def abortTask(tac: TaskAttemptContext): Unit = { }
 
