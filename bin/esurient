@@ -7,14 +7,6 @@
 # *-site.xml files in HADOOP_CONF_DIR.
 
 
-# Assumes we're executing from the bin/ dir. finds repo root dir
-pushd ../$(dirname $0) >/dev/null
-BASEDIR=`pwd -P`
-popd
-
-# Default if the user didn't provide a path to the fat jar
-JARPATH="$BASEDIR/target/esurient-1.0-SNAPSHOT-jar-with-dependencies.jar" 
-
 function green() {
   echo -e "\x1B[32m"
 }
@@ -27,7 +19,7 @@ function off() {
   echo -e "\x1B[0m"
 }
 
-function usage() {
+function runJob() {
   green
   echo '[*] '
   white
@@ -44,5 +36,32 @@ function usage() {
   exit 0
 }
 
-usage
+function usage() {
+  green
+  echo '[*] '
+  white
+  echo "Usage:"
+  echo "    $0 [-h|--help]"
+  echo "    $0 [/path/to/esurient.jar] [arg1] [arg2] ..."
+  off
+  echo
+  exit 1
+}
 
+# Assumes we're executing from the bin/ dir. finds repo root dir
+pushd ../$(dirname $0) >/dev/null
+BASEDIR=`pwd -P`
+popd
+
+# Default if the user didn't provide a path to the fat jar
+JARPATH="$BASEDIR/target/esurient-1.0-SNAPSHOT-jar-with-dependencies.jar" 
+if [ -n $1 ] ; then
+  JARPATH = $1
+  shift
+fi
+
+if [[ "$JARPATH" == '-h' || "$JARPATH" == '--help' ]] ; then
+  usage
+else
+  runJob
+fi
