@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
+#######################################################
+# An example runner script for use with the fat jar
+# produced by bin/build. Must be executed from a host
+# with a Hadoop client installed at HADOOP_HOME and the
+# *-site.xml files in HADOOP_CONF_DIR.
+
+
+# Assumes we're executing from the bin/ dir. finds repo root dir
 pushd ../$(dirname $0) >/dev/null
-BASE=`pwd -P`
+BASEDIR=`pwd -P`
 popd
+
+# Default if the user didn't provide a path to the fat jar
+JARPATH="$BASEDIR/target/esurient-1.0-SNAPSHOT-jar-with-dependencies.jar" 
 
 function green() {
   echo -e "\x1B[32m"
@@ -22,7 +33,7 @@ function usage() {
   white
   echo "Esurient Job Executing with args: $@"
   off
-  `hadoop classpath` hadoop jar target/esurient-1.0-SNAPSHOT-jar-with-dependencies.jar com.ereisman.esurient.hadoop.EsurientTool $@
+  HADOOP_CLASSPATH=`hadoop classpath` hadoop jar $JARPATH com.ereisman.esurient.hadoop.EsurientTool $@
   green
   echo '[*] '
   white
