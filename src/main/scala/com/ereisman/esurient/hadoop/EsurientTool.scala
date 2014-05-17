@@ -12,13 +12,8 @@ import org.apache.hadoop.conf.{Configuration,Configured}
 object EsurientTool {
 
   def main(args: Array[String]): Unit = {
-    // if HADOOP_CONF_DIR is on the classpath, this will pick up the site.xml file info
-    val conf = new Configuration(true)
-    // consume the args meant for "hadoop jar" command (such as -libjars) and leave the rest
-    val nonHadoopArgs = new GenericOptionsParser(conf, args).getRemainingArgs
-    System.exit(
-      ToolRunner.run(conf, new EsurientTool, nonHadoopArgs)
-    )
+    // if HADOOP_CONF_DIR is on the classpath, this will pick up the site.xml files
+    System.exit( ToolRunner.run(new Configuration(true), new EsurientTool, args) )
   }
 }
 
