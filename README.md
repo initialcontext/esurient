@@ -22,7 +22,7 @@ Message passing or RPC on a Hadoop cluster? Recieve/generate event streams?
 
 Host another long-lived service on a set number of your Hadoop slots?
 
-Database access, spawn actors/threads, DDoS, whatever?
+Database access, spawn actors/threads, whatever?
 
 Don't have a YARN (MRv2) Hadoop cluster yet?
 
