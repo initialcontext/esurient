@@ -14,6 +14,7 @@ object EsurientConstants {
     val ES_TASK_GROUPS                        = "esurient.task.groups"
     val ES_TASK_COUNT                         = "esurient.task.count"
     val ES_TASK_AUTO_HEARTBEAT_MILLIS         = "esurient.task.auto.heartbeat.millis"
+    val ES_LOG_HEARTBEATS                     = "esurient.log.heartbeats"
     // to be combined with taskId to form the single-task-specific config keys
     val ES_TASK                               = "esurient.task."
     val ES_JOB_NAME                           = "esurient.job.name"

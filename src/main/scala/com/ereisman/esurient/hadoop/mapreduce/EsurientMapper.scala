@@ -8,6 +8,8 @@ import org.apache.hadoop.io.NullWritable
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import org.apache.log4j.Logger
+
 import com.ereisman.esurient.hadoop.io.EsurientInputSplit
 import com.ereisman.esurient.EsurientTask
 import com.ereisman.esurient.EsurientConstants._
@@ -107,13 +109,23 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
  *             thread is eliminated if it throws an exception or completes successfully.
  */
 class EsurientAutomaticHeartbeater(context: EsurientTask.Context, done: AtomicBoolean) extends java.lang.Thread {
+  import com.ereisman.esurient.hadoop.mapreduce.EsurientAutomaticHeartbeater._
+
+  val logHeartBeats = context.getConfiguration.getBoolean(ES_LOG_HEARTBEATS, false)
   val heartbeatMillis = context.getConfiguration
     .getLong(ES_TASK_AUTO_HEARTBEAT_MILLIS, ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT)
 
   override def run(): Unit = {
+    LOG.info("Heartbeats will be issued automatically for this run at " + (heartbeatMillis/1000) + " second intervals")
     while (!done.get) {
+      if (logHeartBeats) { LOG.info("HEARTBEAT at " + formatter.format(new java.util.Date)) }
       context.progress
       java.lang.Thread.sleep(heartbeatMillis)
     }
   }
+}
+
+object EsurientAutomaticHeartbeater {
+  val LOG = Logger.getLogger(classOf[EsurientAutomaticHeartbeater])
+  val formatter = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
 }
