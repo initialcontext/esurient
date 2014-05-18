@@ -1,4 +1,4 @@
-package com.ereisman.esurient.userdefined
+package com.ereisman.esurient.examples
 
 
 import org.apache.hadoop.conf.Configuration
@@ -15,7 +15,7 @@ object EsurientDefaultTask {
 
 
 class EsurientDefaultTask extends com.ereisman.esurient.EsurientTask {
-  import com.ereisman.esurient.userdefined.EsurientDefaultTask._
+  import com.ereisman.esurient.examples.EsurientDefaultTask._
 
   override def execute: Unit = {
     // the unique task id you can use to assign work deterministically to each task

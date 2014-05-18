@@ -1,4 +1,4 @@
-package com.ereisman.esurient.userdefined
+package com.ereisman.esurient.examples
 
 
 import org.apache.hadoop.conf.Configuration
@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.db.{Database,DatabaseFactory}
+import com.ereisman.esurient.EsurientConstants._
 
 
 object EsurientEtlTask {
@@ -15,10 +16,11 @@ object EsurientEtlTask {
 
 
 class EsurientEtlTask extends com.ereisman.esurient.EsurientTask {
+  import com.ereisman.esurient.examples.EsurientEtlTask._
 
   override def execute: Unit = {
-    val taskId = context.getConfiguration.getInt("esurient.this.task.id", EsurientEtlTask.ERROR)
-    val totalTasks = context.getConfiguration.getInt("esurient.task.count", EsurientEtlTask.ERROR)
+    val taskId = context.getConfiguration.getInt(ES_THIS_TASK_ID, ERROR)
+    val totalTasks = context.getConfiguration.getInt(ES_TASK_COUNT, ERROR)
     val conf = context.getConfiguration
     val db = DatabaseFactory.getDatabase(taskId, conf)
 
@@ -27,4 +29,3 @@ class EsurientEtlTask extends com.ereisman.esurient.EsurientTask {
     // TODO: do work!!!
   }
 }
-
