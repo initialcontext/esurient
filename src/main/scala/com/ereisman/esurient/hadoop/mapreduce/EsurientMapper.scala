@@ -16,10 +16,17 @@ import com.ereisman.esurient.EsurientConstants._
 // until we publish artifact, put user-defined task classes in here and compile together
 import com.ereisman.esurient.examples._
 
+
+object EsurientMapper {
+  val LOG = Logger.getLogger(classOf[EsurientMapper])
+}
+
 /**
  * A Hadoop Mapper subclass to act as a wrapper for the ETL process we will execute.
  */
 class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, NullWritable] {
+  import com.ereisman.esurient.hadoop.mapreduce.EsurientMapper._
+
   // the Task that will be executed by the Esurient framework
   var esurientTask: EsurientTask = null
   var done = new AtomicBoolean(false)
@@ -74,7 +81,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
    *                provide unique task id and task metadata.
    */
   def instantiateUserDefinedTask(context: EsurientTask.Context): EsurientTask = {
-    val clsName = context.getConfiguration.get(ES_THIS_TASK_ID)
+    val clsName = context.getConfiguration.get(ES_TASK_CLASS_NAME)
     Class.forName(clsName).newInstance.asInstanceOf[EsurientTask].init(context)
   }
 

@@ -1,4 +1,4 @@
-package com.ereisman.esurient.userdefined
+package com.ereisman.esurient.examples
 
 
 import org.apache.hadoop.conf.Configuration
@@ -15,7 +15,7 @@ object EsurientPartitionedTask {
 
 
 class EsurientPartitionedTask extends com.ereisman.esurient.EsurientTask {
-  import com.ereisman.esurient.userdefined.EsurientPartitionedTask._
+  import com.ereisman.esurient.examples.EsurientPartitionedTask._
 
   override def execute: Unit = {
     // the Hadoop Configuration for this job full of useful metadata, and user-set job properties

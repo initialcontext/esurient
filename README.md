@@ -21,7 +21,7 @@ See the code in the `examples` package for more ideas. In conclusion, Esurient i
 
 * Host another long-lived service on a set number of your Hadoop slots?
 
-* Communicate with databases or other external servies, spawn actors/threads in each of your tasks, write your own app, but don't have a YARN cluster yet?
+* Want to script something to communicate with databases or other external services, spawn actors/threads in each Hadoop process, write your own app, but don't have a YARN cluster yet?
 
 * Need to do something that MapReduce just isn't good at? Don't want to be told how to do it?
 
@@ -55,4 +55,4 @@ Execute `bin/esurient -p path/to/job.properties -j path/to/esurient.jar`, or alt
 That's it! You can pretty much do anything you want in your job code, you are no longer working within the MapReduce paradigm.
 
 ### Warning ###
-This software is a stable and proven method for running non-MapReduce, long-lived processes on a Hadoop cluster. However, Esurient specializes in giving you all the rope you need to hang yourself, so _use common sense_. Additional caution is advised when your Esurient job will share a cluster with other users' jobs.
+This software uses a stable and proven method for running non-MapReduce, long-lived processes on a Hadoop cluster. However, Esurient specializes in giving you all the rope you need to hang yourself, so _use common sense_. Additional caution is advised when your Esurient job will share a cluster with other users' jobs.
