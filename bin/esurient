@@ -4,20 +4,11 @@
 # An example runner script for use with the fat jar
 # produced by bin/build. Must be executed from a host
 # with a Hadoop client installed at HADOOP_HOME and the
-# *-site.xml files in HADOOP_CONF_DIR.
-
-
-function green() {
-  echo -e "\x1B[32m"
-}
-
-function white() {
-  echo -e "\x1B[37m"
-}
-
-function off() {
-  echo -e "\x1B[0m"
-}
+# Hadoop *-site.xml files in HADOOP_CONF_DIR.
+function red() { echo -en "\x1B[31m" }
+function green() { echo -en "\x1B[32m" }
+function white() { echo -en "\x1B[37m" }
+function off() { echo -en "\x1B[0m" }
 
 function runJob() {
   green
@@ -25,7 +16,7 @@ function runJob() {
   white
   echo "Esurient Job Executing with args: $@"
   off
-  HADOOP_CLASSPATH=`hadoop classpath` hadoop jar $JARPATH com.ereisman.esurient.hadoop.EsurientTool $@
+  HADOOP_CLASSPATH=`hadoop classpath` hadoop jar "$JARPATH" com.ereisman.esurient.hadoop.EsurientTool "$JOBPROPS"
   green
   echo '[*] '
   white
@@ -38,12 +29,31 @@ function runJob() {
 
 function usage() {
   green
-  echo '[*] '
   white
-  echo "Usage:"
-  echo "    $0 [-h|--help]"
-  echo "    $0 [/path/to/esurient.jar] [arg1] [arg2] ..."
+  echo " Usage:"
+  echo "    $0 -h"
+  echo "    $0 [-p path/to/esurient-job.properties] [-j path/to/esurient.jar] [[hadoop-jar-arg] ...]"
+  echo 
+  echo " Defaults: Job Properties File = '$1', Path To Esurient Jar: '$2'"
+  echo "           'hadoop-jar-arg' is any number of arguments meant to configure"
+  echo "           the 'hadoop jar' call, such as -libjars"
   off
+  echo
+  echo " Notes:"
+  echo "    Instead of command-line arguments, you should place keys values in a standard"
+  echo "    Java Properties file. These will be injected as overrides into the basic Hadoop"
+  echo "    Configuration for this job, so BE CAREFUL NOT TO OVERRIDE HADOOP SYSTEM PROPERTIES"
+  echo "    unless that is what you intend. Hadoop will use the last override applied in all cases."
+  echo
+  echo "    Esurient properties that you may also wish to override or read are prefixed with "
+  echo "    'esurient'. Upon spawning, each task can access its unique ID via the Configuration"
+  echo "    key 'esurient.this.task.id' (for instance.) See example jobs for more."
+  echo
+  echo "    In addition, if you have global job properties you'd like to define, drop those into"
+  echo "    HADOOP_CONF_DIR on the host you will be lauching jobs from as the file 'esurient-site.xml'"
+  echo "    in the same key-value format that Hadoop *-site.xml files use. These values will be injected"
+  echo "    into the Hadoop Configuration of every Esurient job launched on that host, subject to override"
+  echo "    by the values in the job properties file you specify at the command line."
   echo
   exit 1
 }
@@ -55,13 +65,16 @@ popd
 
 # Default if the user didn't provide a path to the fat jar
 JARPATH="$BASEDIR/target/esurient-1.0-SNAPSHOT-jar-with-dependencies.jar" 
-if [ -n $1 ] ; then
-  JARPATH = $1
-  shift
-fi
+JOBPROPS="$BASEDIR/esurient-example-job.properties"
 
-if [[ "$JARPATH" == '-h' || "$JARPATH" == '--help' ]] ; then
-  usage
-else
-  runJob
-fi
+# get args and override defaults if needed
+while getopts ":p:jh" OPT ; do
+  case $OPT in
+    p) JOBPROPS="$OPTARG" ; shift ; shift ;;
+    j) JOBPATH="$OPTARG" ; shift ; shift ;;
+    h) usage ;;
+    *) ;; # pass remaining args along
+  esac
+
+runJob $@
+

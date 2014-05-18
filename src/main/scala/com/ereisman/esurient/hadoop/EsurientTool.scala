@@ -12,7 +12,7 @@ import org.apache.hadoop.conf.{Configuration,Configured}
 object EsurientTool {
 
   def main(args: Array[String]): Unit = {
-    // if HADOOP_CONF_DIR is on the classpath, this will pick up the site.xml files
+    Configuration.addDefaultResource("esurient-site.xml")
     System.exit( ToolRunner.run(new Configuration(true), new EsurientTool, args) )
   }
 }
@@ -24,7 +24,7 @@ object EsurientTool {
 class EsurientTool extends Configured with Tool {
 
   override def run(args: Array[String]): Int = {
-    setConf( parseArgsIntoConfiguration(args, getConf) )
+    setConf( injectJobPropsIntoConfiguration(args(0), getConf) )
     val job = Job.getInstance( getConf, getConf.get(ES_JOB_NAME, "Esurient Job") )
     job.setMapperClass(classOf[EsurientMapper])
     job.setInputFormatClass(classOf[EsurientInputFormat])
@@ -40,24 +40,24 @@ class EsurientTool extends Configured with Tool {
   }
 
   /**
-   * Job configuration in Esurient comes from the command line OR optionally from standard K=V
-   * Java property files.
-   *      <p>
-   *      Global job configurations (or values meant to override those in the local host machine's
-   *      HADOOP_CONF_DIR) can be placed in HADOOP_CONF_DIR named "esurient-site.xml"
-   *      <p>
-   *      Job specific Configuration values can come as command line arguments to "hadoop jar"
-   *      in the form --esurient.arg.X.Y.Z=VALUE where X, Y, Z are any number of dot-separated words.
-   *      Each configuration key entered in this way will be injected into the Hadoop Configuration
-   *      for your cluster job, and will be exposed for the user via the EsurientTask.Context object.
-   *      <p>
-   *      There are a number of framework-specific command line arguments of this form you can view
-   *      by entering --help as a command line argument. These include configuration keys to allowing
-   *      the user to select the number of Mapper tasks to be run and the name of a user-defined class
-   *      Inheriting from EsurientTask to instantiate in each host Mapper.
+   * Job configuration in Esurient comes from a standard Java Properties file found in the
+   * command line arguments to 'hadoop jar' or 'bin/esurient' launcher scripts. These properties
+   * will be applied as overrides in the Hadoop Configuration key-value store, which jobs can
+   * access at run time using <code>EsurientTask.Context.getConfiguration.get(key)</code>
+   *
+   * @param propsUri the path to the job's properties file (can be local or on HDFS)
+   * @param conf the Hadoop Configuration we must populate with Esurient job-specific keys and values.
+   * @return the Hadoop Configuration to pass to the Job we're submitting to the cluster.
    */
-  def parseArgsIntoConfiguration(args: Array[String], conf: Configuration): Configuration = {
-    // TODO: make useful Configuration values out of args, return conf
+  def injectJobPropsIntoConfiguration(propsUri: String, conf: Configuration): Configuration = {
+    propsUri match {
+      case hdfsPropsUri: String if (hdfsPropsUri.startsWith("hdfs://")) =>
+        conf.addResource( new org.apache.hadoop.fs.Path(hdfsPropsUri) )
+      case localProps: String =>
+        conf.addResource( new java.io.FileInputStream(localProps) )
+      case _ =>
+        throw new RuntimeException("Local job properties file was not found at: " + propsUri)
+    }
     conf
   }
 }
