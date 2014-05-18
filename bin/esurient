@@ -5,7 +5,6 @@
 # produced by bin/build. Must be executed from a host
 # with a Hadoop client installed at HADOOP_HOME and the
 # Hadoop *-site.xml files in HADOOP_CONF_DIR.
-function red() { echo -en "\x1B[31m" }
 function green() { echo -en "\x1B[32m" }
 function white() { echo -en "\x1B[37m" }
 function off() { echo -en "\x1B[0m" }
@@ -16,7 +15,7 @@ function runJob() {
   white
   echo "Esurient Job Executing with args: $@"
   off
-  HADOOP_CLASSPATH=`hadoop classpath` hadoop jar "$JARPATH" com.ereisman.esurient.hadoop.EsurientTool "$JOBPROPS"
+  HADOOP_CLASSPATH=`hadoop classpath` hadoop jar "$JARPATH" com.ereisman.esurient.hadoop.EsurientTool "$JOBPROPS" $@
   green
   echo '[*] '
   white
