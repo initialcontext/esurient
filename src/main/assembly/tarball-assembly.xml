@@ -1,0 +1,32 @@
+<assembly>
+  <id>bundle</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/${dist.name}</outputDirectory>
+      <includes>
+        <include>README*</include>
+        <include>LICENSE*</include>
+        <include>esurient-example-job.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/target</directory>
+      <outputDirectory>/${dist.name}/target</outputDirectory>
+      <includes>
+        <include>*.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.basedir}/bin</directory>
+      <outputDirectory>/${dist.name}/bin</outputDirectory>
+      <includes>
+        <include>*</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>
