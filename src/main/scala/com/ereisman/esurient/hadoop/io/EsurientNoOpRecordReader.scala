@@ -10,8 +10,7 @@ import org.apache.hadoop.mapreduce.{InputSplit,TaskAttemptContext,RecordReader}
  * to run our ETL jobs in. There will be no Reduce phase to this job, and no
  * actual "MapReduce" processing happening at all.
  *
- * The key to the trick is returning 1 record from each of these object instantiated
- * so that the Mapper recieving it will believe it got input, and will execute.
+ * Must return exactly 1 NullWritable Key/Value pair when passed to the Mapper via Context.
  */
 
 object EsurientNoOpRecordReader {
