@@ -26,6 +26,10 @@ See the code in the `examples` package for more ideas. In conclusion, Esurient i
 * Need to do something that MapReduce just isn't good at? Don't want to be told how to do it?
 
 
+## Limitations ##
+This technique isn't magic - although we get a user-defined number of Mapper processes, unique task IDs, and global job configuration to share marching orders, we don't have control over which cluster nodes will host each Mapper process. This makes some activities a bit trickier. To bootstrap message passing, cluster processes might communicate with the process that launched the job off-cluster. For coordinating more complex activities (leader election, etc.) tools like Apache Zookeeper come in handy.
+
+
 ## Instructions ##
 Ensure you have Java, a Hadop client appropriate to your cluster version, all associated configuration files and env vars set, and Maven 3 installed. You won't need to have Scala installed on the cluster or your build machine.
 
@@ -54,5 +58,5 @@ Execute `bin/esurient -p path/to/job.properties -j path/to/esurient.jar`, or alt
 
 That's it! You can pretty much do anything you want in your job code, you are no longer working within the MapReduce paradigm.
 
-### Warning ###
+## Warning ##
 This software uses a stable and proven method for running non-MapReduce, long-lived processes on a Hadoop cluster. However, Esurient specializes in giving you all the rope you need to hang yourself, so _use common sense_. Additional caution is advised when your Esurient job will share a cluster with other users' jobs.
