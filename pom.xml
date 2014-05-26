@@ -154,6 +154,13 @@
 
   <dependencies>
     <!-- Core Esurient dependencies -->
+
+    <!-- hadoop-client is a nice single-import for CDH distributions.
+         If you use vanilla Apache Hadoop distribution on your cluster,
+         you might need to add additional dependency tags for packages like
+         hadoop-common, hadoop-hdfs, and hadoop-mapreduce. See your individual
+         Hadoop distro documentation for details.
+      -->
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
@@ -181,29 +188,26 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
+<!-- *** Some examples of libraries one might use in Esurient jobs, and some
+     *** libraries the framework is likely to make use of in the near future.
+  <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>5.1.6</version>
-      <optional>true</optional> <!-- remove this to include big driver jars in our fat jar -->
     </dependency>
 
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <version>9.3-1101-jdbc4</version>
-      <optional>true</optional> <!-- remove this to include big driver jars in our fat jar -->
     </dependency>
 
     <dependency>
       <groupId>io.backchat.jerkson</groupId>
       <artifactId>jerkson_2.9.2</artifactId>
       <version>0.7.0</version>
-      <optional>true</optional> <!-- remove this to include JSON deps in our fat jar -->
     </dependency>
 
-    <!-- Users might want to bring in deps from any additional Hadoop processing frameworks they use -->
-<!--
     <dependency>
       <groupId>cascading</groupId>
       <artifactId>cascading-core</artifactId>
@@ -222,6 +226,7 @@
       <version>2.2.0</version>
     </dependency>
 -->
+
   </dependencies>
 
 </project>
