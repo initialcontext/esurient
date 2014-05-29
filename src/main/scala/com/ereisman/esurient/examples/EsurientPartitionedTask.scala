@@ -35,14 +35,14 @@ class EsurientPartitionedTask extends com.ereisman.esurient.EsurientTask {
 
     // retrieve another user-defined value set in properties file, injected into Configuration,
     // that has no meaning outside the user's application class:
-    val myUserDefinedValueOne = conf.getInt("esurient.user.job.arg.1", 0)
-    val myUserDefinedValueTwo = conf.get("esurient.user.job.arg.2", "ERROR")
+    val myUserDefinedValueOne = conf.getInt("esurient.user.job.arg.1", ERROR)
+    val myUserDefinedValueTwo = conf.get("esurient.user.job.arg.2", "ERROR no value set")
     // same, but this time its a String value
-    val myOtherUserDefinedValue = conf.get("can.be.called.anything", "error, no value set?")
+    val myOtherUserDefinedValue = conf.get("can.be.called.anything", "ERROR no value set")
 
     // do some hello world stuff to demonstrate using Configuration values
     // to assign task and group work deterministically (if desired)
-    LOG.info("Hi, This is EsurientDefaultTask #" + taskId + " of " + totalTasks)    
+    LOG.info("Hi, This is EsurientPartitionedTask (" + taskId + " of " + totalTasks + ")")    
     // partition tasks up into work groups by their task ID.
     LOG.info("Task (" + taskId + ") is a member of work group (" + groupId + ")")
 
