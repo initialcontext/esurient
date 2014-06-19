@@ -2,30 +2,28 @@ package com.ereisman.esurient.examples
 
 
 import org.apache.hadoop.conf.Configuration
-
 import org.apache.log4j.Logger
 
-import com.ereisman.esurient.db.{Database,DatabaseFactory}
-import com.ereisman.esurient.EsurientConstants._
+import com.ereisman.esurient.EsurientTask
+import com.ereisman.esurient.etl.format.EtlOutputFormatterFactory
 
 
-object EsurientEtlTask {
-  val LOG = Logger.getLogger(classOf[EsurientEtlTask])
-  val ERROR = -1
-}
-
-
-class EsurientEtlTask extends com.ereisman.esurient.EsurientTask {
-  import com.ereisman.esurient.examples.EsurientEtlTask._
+/**
+ * Executable host container for ETL task, runs the Driver, passing it
+ * Hadoop Configuration containing all important metadata from the job
+ * properties file hosted on HDFS and generated beforehand by a run of
+ * the EsurientEtlMetadataManager.
+ */
+class EsurientEtlTask extends EsurientTask {
 
   override def execute: Unit = {
-    val taskId = context.getConfiguration.getInt(ES_THIS_TASK_ID, ERROR)
-    val totalTasks = context.getConfiguration.getInt(ES_TASK_COUNT, ERROR)
-    val conf = context.getConfiguration
-    val db = DatabaseFactory.getDatabase(taskId, conf)
+    // this is needed to configure the job
+    val jobConfig = context.getConfiguration
+    // this is pluggable - write your own output class (see etl.format package)
+    val formatter = EtlOutputFormatterFactory.getFormatter(jobConfig)
 
-    // TODO: set up DB metadata objects to track connections etc. before we run the task 
+    // execute the ETL job
+    new com.ereisman.esurient.etl.EsurientEtlDriver(jobConfig, formatter)
+  }  
 
-    // TODO: do work!!!
-  }
 }

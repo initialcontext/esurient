@@ -10,7 +10,7 @@ import com.ereisman.esurient.EsurientConstants._
 
 object EsurientPartitionedTask {
   val LOG = Logger.getLogger(this.getClass())
-  val ERROR = -1
+  val ES_ERROR_CODE = -1
 }
 
 
@@ -26,16 +26,16 @@ class EsurientPartitionedTask extends com.ereisman.esurient.EsurientTask {
 
     // use the Hadoop Configuration to obtain the unique task ID the framework
     // has assigned this process. You can use it to assign work deterministically.
-    val taskId = conf.getInt(ES_THIS_TASK_ID, ERROR)
+    val taskId = conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE)
     // can use modular arithmetic and the monotonic integers assigned as 
     // taskId's to partition the tasks in this job into various work groups
     val groupId = taskId % conf.getInt(ES_TASK_GROUPS, 4)
     // total # of tasks launched in this job, in this case set by the esurient-example-job.properties file
-    val totalTasks = conf.getInt(ES_TASK_COUNT, ERROR)
+    val totalTasks = conf.getInt(ES_TASK_COUNT, ES_ERROR_CODE)
 
     // retrieve another user-defined value set in properties file, injected into Configuration,
     // that has no meaning outside the user's application class:
-    val myUserDefinedValueOne = conf.getInt("esurient.user.job.arg.1", ERROR)
+    val myUserDefinedValueOne = conf.getInt("esurient.user.job.arg.1", ES_ERROR_CODE)
     val myUserDefinedValueTwo = conf.get("esurient.user.job.arg.2", "ERROR no value set")
     // same, but this time its a String value
     val myOtherUserDefinedValue = conf.get("can.be.called.anything", "ERROR no value set")

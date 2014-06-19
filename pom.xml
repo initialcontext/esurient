@@ -188,9 +188,7 @@
       <scope>test</scope>
     </dependency>
 
-<!-- *** Some examples of libraries one might use in Esurient jobs, and some
-     *** libraries the framework is likely to make use of in the near future.
-  <dependency>
+   <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>5.1.6</version>
@@ -202,12 +200,14 @@
       <version>9.3-1101-jdbc4</version>
     </dependency>
 
-    <dependency>
+   <dependency>
       <groupId>io.backchat.jerkson</groupId>
       <artifactId>jerkson_2.9.2</artifactId>
       <version>0.7.0</version>
     </dependency>
 
+<!-- *** Some examples of libraries one might use in Esurient jobs, and some
+     *** libraries the framework is likely to make use of in the near future.
     <dependency>
       <groupId>cascading</groupId>
       <artifactId>cascading-core</artifactId>

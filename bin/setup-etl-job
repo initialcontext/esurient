@@ -1,0 +1,38 @@
+#! /usr/bin/env bash
+
+set -e
+
+################################################################
+# Runs Scala utility to generate the directory structure, job
+# properties file, and JSON-based table schema file for one DB
+# table that you intend to snapshot using EsurientEtlTask.
+# Output files produces here will be written to the base dir
+# specified in the job args on HDFS.
+#
+# Once the properties and schema files are generated, they will
+# only need to be regenerated when the underlying DB table schema
+# is altered, or the nature of the snapshot job needs to change.
+#
+# If altering the existing job properties file by hand is easier
+# for small tweaks, do that instead.
+#
+#
+# NOTE: MANY CLI ARGS are required here to bootstrap a new snapshot job.
+#       It is recommended that you check out the full arg list at:
+#
+#  src/main/scala/com/ereisman/esurient/etl/EsurientEtlMetadataManager.scala
+
+
+
+# Assumes we're executing from the bin/ dir. finds repo root dir
+pushd "$(dirname $0)/.."
+BASEDIR=`pwd -P`
+popd
+
+# Default if the user didn't provide a path to the fat jar
+JARPATH=`ls $BASEDIR/target/esurient-*-jar-with-dependencies.jar`
+
+# See src/main/scala/com/ereisman/esurient/db/EsurientEtlMetadataManager.scala
+# for a list of expected CLI args. Those args are how you customize the job
+# properties for the acual table snapshot ETL job they will configure.
+java -cp `hadoop classpath`:$JARPATH com.ereisman.esurient.examples.EsurientEtlSetupScript $@

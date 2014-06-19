@@ -58,7 +58,12 @@ popd
 
 # Default if the user didn't provide a path to the fat jar
 JARPATH=`ls $BASEDIR/target/esurient-*-jar-with-dependencies.jar`
+# Default job properties script location if none provided
 JOBPROPS="$BASEDIR/esurient-example-job.properties"
+
+if [[ $# == 0 || "$1" == '-h' || "$1" == '--help' ]] ; then
+  usage
+fi
 
 while [[ "$1" == '-j' || "$1" == '-p' ]] ; do
   if [[ "$1" == '-j' ]] ; then
@@ -73,7 +78,7 @@ while [[ "$1" == '-j' || "$1" == '-p' ]] ; do
 
   if [[ "$1" == '-p' ]] ; then
     shift
-    if [[ "${1:0:1}" == '/' ]] ; then
+    if [[ "${1:0:1}" == '/' || "${1:0:7}" == 'hdfs://' ]] ; then
       JOBPROPS="$1"
     else
       JOBPROPS="$BASEDIR/$1"

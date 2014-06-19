@@ -1,0 +1,27 @@
+package com.ereisman.esurient.etl.db
+
+
+import java.util.Properties
+
+
+trait ConfiguredConnection {
+
+  /**
+   * MySQL, Postgres, etc. JDBC drivers can accept different custom properties.
+   * Subclasses should override this.
+   *
+   * @param user the user name to submit for the database connection.
+   * @param pass the password to submit for the database connection.
+   *
+   * @returns a Java Properties object the framework will use to configure the connection.
+   */
+  def getConnectionProperties(user: String, pass: String): Properties = {
+    val props = new Properties
+    Map(
+      "userName" -> user,
+      "passWord" -> pass
+    ).map { entry => props.setProperty(entry._1, entry._2) }
+
+    props
+  }
+}

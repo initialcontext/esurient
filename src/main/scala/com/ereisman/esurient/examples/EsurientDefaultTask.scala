@@ -10,7 +10,6 @@ import com.ereisman.esurient.EsurientConstants._
 
 object EsurientDefaultTask {
   val LOG = Logger.getLogger(this.getClass())
-  val ERROR = -1
 }
 
 
@@ -19,9 +18,9 @@ class EsurientDefaultTask extends com.ereisman.esurient.EsurientTask {
 
   override def execute: Unit = {
     // the unique task id you can use to assign work deterministically to each task
-    val taskId = context.getConfiguration.getInt(ES_THIS_TASK_ID, ERROR)
+    val taskId = context.getConfiguration.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE)
     // the total # of tasks launched in this job
-    val totalTasks = context.getConfiguration.getInt(ES_TASK_COUNT, ERROR)
+    val totalTasks = context.getConfiguration.getInt(ES_TASK_COUNT, ES_ERROR_CODE)
     // the Hadoop Configuration for this job full of useful metadata, values from cmd line args etc.
     val conf = context.getConfiguration
 

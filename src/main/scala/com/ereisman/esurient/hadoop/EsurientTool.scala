@@ -56,10 +56,16 @@ class EsurientTool extends Configured with Tool {
    * @return the Hadoop Configuration to pass to the Job we're submitting to the cluster.
    */
   def injectJobPropsIntoConfiguration(propsUri: String, conf: Configuration): Configuration = {
+    // add a "global" job time stamp (UNIX epoch) into the Configuration all tasks will recieve
+    conf.set(ES_JOB_TIMESTAMP, ((new java.util.Date).getTime / 1000L).toString)
+    // Is the job properties file on HDFS or local filesystem?
+    // Read it and inject keys/vals into Configuration
     propsUri match {
       case hdfsPropsUri: String if (hdfsPropsUri.startsWith("hdfs://")) => {
-        val stream = Source.fromInputStream(FileSystem.get(conf).open(new Path(hdfsPropsUri)), "UTF-8")
+        val fs = FileSystem.get(conf)
+        val stream = Source.fromInputStream(fs.open(new Path(hdfsPropsUri)), "UTF-8")
         addSourceToConfiguration( conf, stream.mkString )
+        fs.close
       }
       case localProps: String => {
         addSourceToConfiguration( conf, Source.fromFile(new java.io.File(localProps), "UTF-8").mkString )
