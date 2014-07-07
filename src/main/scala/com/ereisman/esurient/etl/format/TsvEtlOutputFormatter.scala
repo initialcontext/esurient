@@ -26,13 +26,13 @@ class TsvEtlOutputFormatter(val conf: Configuration) extends EtlOutputFormatter 
       }
     }.mkString("\t")
 
-    // appended shard id if this is a sharded table ; for proper deduping in post-processing
-    tsv + suffix
+    tsv + suffix + "\n"
   }
 
-  // assume (task id -> shard id) mapping if this is a sharded table
+  // appended shard id if this is a sharded table for proper deduping in post-processing
   private def getShardIdSuffix(conf: Configuration): String = {
     conf.getBoolean(ES_DB_SHARDED_TABLE, false) match {
+      // assume (task id -> shard id) mapping if this is a sharded table
       case true => "\t" + conf.get(ES_THIS_TASK_ID, "ERROR_NO_SHARD_ID_FOUND")
       case _    => ""
     }

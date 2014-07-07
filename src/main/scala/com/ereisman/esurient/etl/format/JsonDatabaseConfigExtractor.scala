@@ -56,15 +56,19 @@ class JsonDatabaseConfigExtractor extends DatabaseConfigExtractor {
       .filter { entry => entry._1.startsWith(db) }
 
     LOG.info("Applying db configs to " + (shardsByBaseName.keys.size) + " task configurations for snapshot of DB: " + db)
-
     // first shard is chosen to provide values that are the same in all metadata entries
     val globalMap = shardMap(shardsByBaseName(shardsByBaseName.keys.first).first)
     props.setProperty(ES_DB_USERNAME, globalMap("user"))
     props.setProperty(ES_DB_PORT, globalMap("port"))
+    props.setProperty(ES_TASK_COUNT, shardsByBaseName.keys.size.toString)
 
     // these props will be different for each shard's metadata of the db
     shardsByBaseName.keys.toSeq.sorted[String].zipWithIndex.foreach {
-      entry => injectProperties(props, shardMap, shardsByBaseName(entry._1), entry._2)
+      entry => {
+        val baseName = entry._1     // this is the DB name that task "taskId" will read in ETL jobs
+        val taskId = entry._2 + 1   // zipWithIndex is (0..size), taskId is (1...size)
+        injectProperties(props, shardMap, shardsByBaseName(baseName), taskId)
+      }
     }
   }
 

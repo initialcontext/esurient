@@ -145,12 +145,15 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       ES_DB_BASE_OUTPUT_PATH    -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE            -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                -> conf.get(ES_DB_TYPE, error),
-      ES_JOB_NAME               -> composeJobName,
       // TODO: make this test pluggable - there are many better ways to determine if table is sharded or not
       ES_DB_SHARDED_TABLE       -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
       ES_DB_UPDATE_WINDOW_SECS  -> conf.get(ES_DB_UPDATE_WINDOW_SECS, error),
       ES_DB_UPDATE_COLUMN       -> conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT),
-      ES_TASK_AUTO_HEARTBEAT    -> "true"
+      // General EsurientTask boilerplate
+      ES_JOB_NAME               -> composeJobName,
+      ES_TASK_CLASS_NAME        -> "com.ereisman.esurient.examples.EsurientEtlTask",
+      ES_TASK_AUTO_HEARTBEAT    -> "true",
+      ES_LOG_HEARTBEATS         -> "true"
     ).map { entry => props.setProperty(entry._1, entry._2) }
     
     props

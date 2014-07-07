@@ -12,7 +12,6 @@ import org.apache.hadoop.hdfs.DistributedFileSystem
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.etl.db.{Database,DatabaseFactory}
-import com.ereisman.esurient.EsurientTask
 import com.ereisman.esurient.EsurientConstants._
 import com.ereisman.esurient.etl.format.EtlOutputFormatter
 
@@ -24,45 +23,31 @@ object EsurientEtlDriver {
 
 /**
  * Called from the EsurientEtlTask#execute method, this drives
- * the ETL job, manages the lifecycle of the DB connections
- * and related references, and handles retries for various
- * failure states.
+ * the ETL job, manages the lifecycle of the DB connections, etc.
+ * Retries are handled by the framework (i.e. new mapper is spawned
+ * to handle this portion of the ETL task if this one dies.)
  *
- * It is assumed that an earlier run of EsurientEtlMetadataManager
- * has produced a Java Properties file on HDFS which this driver
- * will use to configure the snapshot job, DB connections, etc.
+ * It is assumed that an earlier run of EsurientEtlSetupScript
+ * (perhaps via bin/setup-etl-job) has produced a Java Properties
+ * file on HDFS which this driver will use to configure this snapshot.
  */
 class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputFormatter) {
   import com.ereisman.esurient.etl.EsurientEtlDriver.LOG
-  
+
   // The contents of these fields are subject to reinitialization during retries,
   // and their lifecycles are managed by this task. Therefore, they are mutable.
   var db: Database = null
   var rs: ResultSet = null
   var dfs: DistributedFileSystem = null
   var stream: BufferedOutputStream = null
-  var retries: Int = ES_ERROR_CODE
   var formatter: EtlOutputFormatter = null
   var outPath: Path = null
-  
-  ///// EXECUTE THE JOB /////
-  retries = conf.getInt(ES_DB_RETRIES, ES_DB_RETRIES_DEFAULT)
 
+  ///// EXECUTE THE JOB /////
   try {
-    while (retries > 0) {
-      try {
-        performSnapshot(conf)
-      } catch {
-        // we can attempt some retries under SQL or Hadoop I/O problems
-        case ex @ (_: SQLException | _: IOException) => {
-          retryExceptionHandler(LOG, ex)
-          retries -= 1
-          LOG.warn(retries + " retry attempts remaining...")
-        }
-        // if its a RuntimeException or similar, let it blow up
-        case ex: Throwable => blowUp(LOG, ex)
-      }
-    }
+    performSnapshot(conf)
+  } catch {
+    case ex: Throwable => blowUp(LOG, ex)
   } finally {
     closeResources
   }
@@ -82,7 +67,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
     // parse & clean each record, then write to HDFS
     do {
-      while (rs.next) {
+      while (rs.next && !rs.isAfterLast) {
         val record = outputFormatter.formatRecord(rs).getBytes("UTF-8")
         val len = record.length
         stream.write(record, 0, len)
@@ -100,20 +85,13 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   }
 
 
-  private def submitQuery(conf: Configuration): ResultSet = { 
+  private def submitQuery(conf: Configuration): ResultSet = {
     conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED") match {
       case ES_DB_BOOTSTRAP_MODE => db.fullTableSnapshot.get
       case ES_DB_UPDATE_MODE    => db.updateTableSnapshot.get
       case _                    =>
         throw new RuntimeException("No job mode (bootstrap or update) supplied in Configuration, aborting.")
     }
-  }
-
-
-  private def retryExceptionHandler(log: Logger, ex: Throwable): Unit = {
-    Utils.logException(log, ex)
-    closeResources
-    Thread.sleep(ES_DB_RETRY_SLEEP_MILLIS)
   }
 
 
@@ -125,10 +103,10 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
 
   private def cleanupPartialOutput: Unit = {
-    if (stream != null) { stream.close }
+    if (stream != null) { stream.flush ; stream.close }
     if (dfs != null) {
       dfs.exists(outPath) match {
-        case true => dfs.deleteOnExit(outPath)
+        case true => dfs.delete(outPath, false) ; Thread.sleep(ES_DB_QUICK_PAUSE_MILLIS)
         case _    =>
       }
     }
@@ -145,10 +123,11 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   private def getOutputPath(conf: Configuration): Path = {
     new Path(
       conf.get(ES_DB_BASE_OUTPUT_PATH, "ERROR_NO_BASE_PATH") + "/" +
+      conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED") + "/" +
       List(
         conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED"),
         conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED"),
-        conf.get(ES_JOB_TIMESTAMP, "ERROR_NO_JOB_TIMESTAMP_SUPPLIED"), 
+        conf.get(ES_JOB_TIMESTAMP, "ERROR_NO_JOB_TIMESTAMP_SUPPLIED"),
         conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString
       ).mkString("_")
     )

@@ -125,14 +125,23 @@ class EsurientAutomaticHeartbeater(context: EsurientTask.Context, done: AtomicBo
   override def run(): Unit = {
     LOG.info("Heartbeats will be issued automatically for this run at " + (heartbeatMillis/1000) + " second intervals")
     while (!done.get) {
-      if (logHeartBeats) { LOG.info("HEARTBEAT at " + formatter.format(new java.util.Date)) }
+      if (logHeartBeats) { logHeartBeat }
       context.progress
       java.lang.Thread.sleep(heartbeatMillis)
     }
+  }
+
+  private def logHeartBeat: Unit = {
+    LOG.info("HEARTBEAT at " + formatter.format(new java.util.Date))
+    val rt = Runtime.getRuntime
+    val used = (rt.totalMemory - rt.freeMemory) / MB_SIZE
+    val free = rt.freeMemory / MB_SIZE
+    LOG.info("JVM Process Heap: Used(" + used + " MB) Free(" + free + " MB)")
   }
 }
 
 object EsurientAutomaticHeartbeater {
   val LOG = Logger.getLogger(classOf[EsurientAutomaticHeartbeater])
+  val MB_SIZE = 1024 * 1024
   val formatter = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
 }

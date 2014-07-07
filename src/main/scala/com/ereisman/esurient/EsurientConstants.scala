@@ -48,6 +48,7 @@ object EsurientConstants {
     val ES_DB_TYPE_POSTGRES                   = "postgres"
     val ES_DB_CONNECTION_TIMEOUT_DEFAULT      = 10000 // milliseconds
     val ES_DB_RETRIES_DEFAULT                 = 3
+    val ES_DB_QUICK_PAUSE_MILLIS              = 1000
     val ES_DB_RETRY_SLEEP_MILLIS              = 5000
     val ES_DB_WINDOW_SECS_DEFAULT             = 86400 * 2 // 2 days
     val ES_DB_BOOTSTRAP_MODE                  = "bootstrap"
