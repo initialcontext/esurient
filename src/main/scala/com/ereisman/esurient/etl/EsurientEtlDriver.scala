@@ -4,9 +4,10 @@ package com.ereisman.esurient.etl
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.io.IOException
+import java.io.BufferedOutputStream
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{Path,FSDataOutputStream}
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.DistributedFileSystem
 import org.apache.log4j.Logger
 
@@ -39,11 +40,11 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   var db: Database = null
   var rs: ResultSet = null
   var dfs: DistributedFileSystem = null
-  var stream: FSDataOutputStream = null
+  var stream: BufferedOutputStream = null
   var retries: Int = ES_ERROR_CODE
   var formatter: EtlOutputFormatter = null
   var outPath: Path = null
-
+  
   ///// EXECUTE THE JOB /////
   retries = conf.getInt(ES_DB_RETRIES, ES_DB_RETRIES_DEFAULT)
 
@@ -68,25 +69,23 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   ///// CONSTRUCTOR ENDS HERE /////
 
 
-
   // (re)initialize class state for this snap attempt, execute the snapshot
   private def performSnapshot(conf: Configuration): Unit = {
     // Hadoop I/O objects
     dfs = Utils.getDfs(conf)
     outPath = getOutputPath(conf)
-    stream = dfs.create(outPath, true)
+    stream = new BufferedOutputStream(dfs.create(outPath, true), BUFFER_SIZE)
 
     // database set up and query submission
     db = DatabaseFactory.getDatabase(conf)
     rs = submitQuery(conf)
-    val shardId = conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString 
 
     // parse & clean each record, then write to HDFS
     do {
       while (rs.next) {
-        val str = outputFormatter.formatRecord(rs).getBytes("UTF-8")
-        val len = str.length
-        stream.write(str, 0, len)
+        val record = outputFormatter.formatRecord(rs).getBytes("UTF-8")
+        val len = record.length
+        stream.write(record, 0, len)
       }
     } while (moreResults)
   }
@@ -113,7 +112,6 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
   private def retryExceptionHandler(log: Logger, ex: Throwable): Unit = {
     Utils.logException(log, ex)
-    if (stream != null) { stream.hflush ; stream.close }
     closeResources
     Thread.sleep(ES_DB_RETRY_SLEEP_MILLIS)
   }
@@ -158,7 +156,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
 
   private def closeResources(): Unit = {
-    if (stream != null) { stream.hflush ; stream.close }
+    if (stream != null) { stream.flush ; stream.close }
     if (dfs != null) { dfs.close }
     if (rs != null) { rs.close }
     if (db != null) { db.close }

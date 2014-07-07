@@ -61,5 +61,6 @@ object EsurientConstants {
     // Hadoop Configuration Default Values /////////////////////////
     val ES_ERROR_CODE                         = -1
     val ES_TASK_COUNT_DEFAULT                 = 20
+    val BUFFER_SIZE                           = 65536 
     val ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT = 8000
 }
