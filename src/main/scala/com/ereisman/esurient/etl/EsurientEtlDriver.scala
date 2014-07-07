@@ -84,7 +84,9 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
     // parse & clean each record, then write to HDFS
     do {
       while (rs.next) {
-        stream.writeUTF(outputFormatter.formatRecord(rs))
+        val str = outputFormatter.formatRecord(rs).getBytes("UTF-8")
+        val len = str.length
+        stream.write(str, 0, len)
       }
     } while (moreResults)
   }

@@ -78,7 +78,9 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
     LOG.info("Updating table schema file: " + schemaPath)
     try {
       // CLI args are populated into Configuration so Database can connect & get JSON schema
-      stream.writeUTF(DatabaseFactory.getDatabase(conf).getTableSchema)
+      val str = DatabaseFactory.getDatabase(conf).getTableSchema.getBytes("UTF-8")
+      val len = str.length
+      stream.write(str, 0, len)
     } finally {
       stream.hsync
       stream.close
@@ -98,7 +100,9 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
     val stream = dfs.create(propsPath, true)
     try {
       LOG.info("Updating job properties file for table snapshot: " + propsPath)
-      stream.writeUTF(writeEtlJobProperties(props))
+      val str = writeEtlJobProperties(props).getBytes("UTF-8")
+      val len = str.length
+      stream.write(str, 0, len)
       prepConfigurationForDbConnect(props)
     } finally {
       stream.hsync
@@ -109,7 +113,7 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
 
   private def writeEtlJobProperties(props: Properties): String = {
     import scala.collection.JavaConversions._
-    props.iterator.toMap.map { entry => entry._1.toString + "=" + entry._2.toString }.mkString("\n") + "\n"
+    props.iterator.toMap.map { entry => entry._1.toString + "=" + entry._2.toString }.mkString("\n")
   }
 
 
@@ -141,6 +145,7 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       ES_DB_BASE_OUTPUT_PATH    -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE            -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                -> conf.get(ES_DB_TYPE, error),
+      ES_JOB_NAME               -> composeJobName,
       // TODO: make this test pluggable - there are many better ways to determine if table is sharded or not
       ES_DB_SHARDED_TABLE       -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
       ES_DB_UPDATE_WINDOW_SECS  -> conf.get(ES_DB_UPDATE_WINDOW_SECS, error),
@@ -149,6 +154,16 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
     ).map { entry => props.setProperty(entry._1, entry._2) }
     
     props
+  }
+
+
+  // make a job name for the JT to display that tells us something useful about the job run.
+  def composeJobName: String = {
+    List(
+      conf.get(ES_DB_MODE, "MODE_UNKNOWN"),
+      "table snapshot:",
+      conf.get(ES_DB_TABLE_NAME, "TABLE_UNKNOWN")
+    ).mkString(" ")
   }
 
 
