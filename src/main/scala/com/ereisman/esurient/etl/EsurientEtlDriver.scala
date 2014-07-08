@@ -32,7 +32,7 @@ object EsurientEtlDriver {
  * file on HDFS which this driver will use to configure this snapshot.
  */
 class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputFormatter) {
-  import com.ereisman.esurient.etl.EsurientEtlDriver.LOG
+  import com.ereisman.esurient.etl.EsurientEtlDriver._
 
   // The contents of these fields are subject to reinitialization during retries,
   // and their lifecycles are managed by this task. Therefore, they are mutable.
@@ -68,9 +68,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
     // parse & clean each record, then write to HDFS
     do {
       while (rs.next && !rs.isAfterLast) {
-        val record = outputFormatter.formatRecord(rs).getBytes("UTF-8")
-        val len = record.length
-        stream.write(record, 0, len)
+        outputFormatter.formatRecord(rs, stream)
       }
     } while (moreResults)
   }
