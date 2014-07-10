@@ -8,7 +8,7 @@ import java.io.BufferedOutputStream
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.DistributedFileSystem
+import org.apache.hadoop.fs.FileSystem
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.etl.db.{Database,DatabaseFactory}
@@ -38,7 +38,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   // and their lifecycles are managed by this task. Therefore, they are mutable.
   var db: Database = null
   var rs: ResultSet = null
-  var dfs: DistributedFileSystem = null
+  var dfs: FileSystem = null
   var stream: BufferedOutputStream = null
   var formatter: EtlOutputFormatter = null
   var outPath: Path = null

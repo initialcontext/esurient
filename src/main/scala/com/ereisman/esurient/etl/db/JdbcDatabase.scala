@@ -128,6 +128,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def produceResultSet(query: String): Option[ResultSet] = {
     val statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+    statement.setFetchSize(Integer.MIN_VALUE) // this will stream records rather than host in-mem
     Some(statement.executeQuery(query))
   }
 
