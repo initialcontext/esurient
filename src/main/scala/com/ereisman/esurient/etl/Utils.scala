@@ -5,14 +5,13 @@ import java.sql.SQLException
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path,FileSystem}
-import org.apache.hadoop.hdfs.DistributedFileSystem
 import org.apache.log4j.Logger
 
 
 object Utils {
-  def getDfs(conf: Configuration): DistributedFileSystem = {
+  def getDfs(conf: Configuration): FileSystem = {
      val nnUri = (new Path(conf.get("fs.default.name", "ERROR_NO_FS_DEFAULT_NAME_FOUND"))).toUri
-     FileSystem.get(nnUri, conf, System.getProperty("USER")).asInstanceOf[DistributedFileSystem]
+     FileSystem.get(nnUri, conf, System.getProperty("USER"))
   }
   
   def logException(log: Logger, exception: Throwable): Unit = {

@@ -2,8 +2,7 @@ package com.ereisman.esurient.etl
 
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.DistributedFileSystem
+import org.apache.hadoop.fs.{Path,FileSystem}
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.log4j.Logger
 
@@ -43,14 +42,15 @@ object EsurientEtlMetadataManager {
  *   --table table_name \
  *   --mode bootstrap|update \
  *   --dbPass password \
+ *   --monitorHostPort host:port \
  *   --updateCol col_name \
  *   --window updateWindowSecs
  * </code>
  *
  * Where 'VERSION' is whatever your current Esurient build produces.
  *
- * Note: the <code>--window</code> and <code>--updateCol</code>
- *       args are optional (used only in 'update' mode)
+ * Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
+ *       The <code>--monitorHostPort</code> arg is also optional
  */
 class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuration, val extractor: DatabaseConfigExtractor) {
   import com.ereisman.esurient.etl.EsurientEtlMetadataManager.LOG
@@ -137,23 +137,27 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
 
     Map[String, String](
       // System configs
-      "mapred.child.java.opts"  -> "-Xmx2G -Xms2G",
+      "mapred.child.java.opts"  -> "-Xmx2G -Xms1G",
       // ETL-specific configs
       ES_DB_PASSWORD            -> conf.get(ES_DB_PASSWORD, error),
       ES_DB_MODE                -> conf.get(ES_DB_MODE, error),
       ES_DB_TABLE_NAME          -> conf.get(ES_DB_TABLE_NAME, error),
-      ES_DB_BASE_OUTPUT_PATH    -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
-      ES_DB_DATABASE            -> conf.get(ES_DB_DATABASE, error),
-      ES_DB_TYPE                -> conf.get(ES_DB_TYPE, error),
+      // ETL jobs that supply a monitoring host:port use table name for monitoring key
+      ES_MONITORING_KEY           -> conf.get(ES_DB_TABLE_NAME, error),
+      ES_MONITORING_HOST_PORT     -> conf.get(ES_MONITORING_HOST_PORT, ""),
+      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, "hadoop.etl.snapshot.heap.mb.%s.task%s %s"),
+      ES_DB_BASE_OUTPUT_PATH      -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
+      ES_DB_DATABASE              -> conf.get(ES_DB_DATABASE, error),
+      ES_DB_TYPE                  -> conf.get(ES_DB_TYPE, error),
       // TODO: make this test pluggable - there are many better ways to determine if table is sharded or not
-      ES_DB_SHARDED_TABLE       -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
-      ES_DB_UPDATE_WINDOW_SECS  -> conf.get(ES_DB_UPDATE_WINDOW_SECS, error),
-      ES_DB_UPDATE_COLUMN       -> conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT),
+      ES_DB_SHARDED_TABLE         -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
+      ES_DB_UPDATE_WINDOW_SECS    -> conf.get(ES_DB_UPDATE_WINDOW_SECS, error),
+      ES_DB_UPDATE_COLUMN         -> conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT),
       // General EsurientTask boilerplate
-      ES_JOB_NAME               -> composeJobName,
-      ES_TASK_CLASS_NAME        -> "com.ereisman.esurient.examples.EsurientEtlTask",
-      ES_TASK_AUTO_HEARTBEAT    -> "true",
-      ES_LOG_HEARTBEATS         -> "true"
+      ES_JOB_NAME                 -> composeJobName,
+      ES_TASK_CLASS_NAME          -> "com.ereisman.esurient.examples.EsurientEtlTask",
+      ES_TASK_AUTO_HEARTBEAT      -> "true",
+      ES_LOG_HEARTBEATS           -> "true"
     ).map { entry => props.setProperty(entry._1, entry._2) }
     
     props
@@ -212,6 +216,8 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       case "--mode" :: mode :: tail           => conf.set(ES_DB_MODE, mode)
       case "--window" :: secs :: tail         => conf.setInt(ES_DB_UPDATE_WINDOW_SECS, secs.toInt)
       case "--updateCol" :: col :: tail       => conf.set(ES_DB_UPDATE_COLUMN, col)
+      case "--monitorHostPort" :: mhp :: tail => conf.set(ES_MONITORING_HOST_PORT, mhp)
+      case "--monitorMsg" :: mm :: tail       => conf.set(ES_MONITORING_MSG_TEMPLATE, mm)
       case _                                  => // keep going
     }
     parseArgsIntoConf(args.tail)

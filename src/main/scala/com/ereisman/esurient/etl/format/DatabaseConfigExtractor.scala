@@ -2,7 +2,7 @@ package com.ereisman.esurient.etl.format
 
 import java.util.Properties
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hdfs.DistributedFileSystem
+import org.apache.hadoop.fs.FileSystem
 
 /**
  * The basis for pluggable modules that handle the specifics when loading and parsing
@@ -28,6 +28,6 @@ trait DatabaseConfigExtractor {
    * @param conf  the Hadoop Configuration used to configure/parameterize this operation.
    * @param props the Java Properties object we are injecting database metadata into.
    */
-  def extractDatabaseConfigs(dfs: DistributedFileSystem, conf: Configuration, props: Properties): Unit = { }
+  def extractDatabaseConfigs(dfs: FileSystem, conf: Configuration, props: Properties): Unit = { }
 
 }

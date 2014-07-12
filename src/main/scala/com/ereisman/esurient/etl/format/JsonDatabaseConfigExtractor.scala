@@ -10,8 +10,7 @@ import java.util.Properties
 import org.apache.log4j.Logger
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hdfs.DistributedFileSystem
+import org.apache.hadoop.fs.{Path,FileSystem}
 
 import scala.collection.JavaConversions._
 import scala.io.Source
@@ -48,25 +47,25 @@ class JsonDatabaseConfigExtractor extends DatabaseConfigExtractor {
    * @param conf  the Hadoop Configuration used to configure/parameterize this operation.
    * @param props the Java Properties object we are injecting database metadata into.
    */
-  override def extractDatabaseConfigs(dfs: DistributedFileSystem, conf: Configuration, props: Properties): Unit = {
+  override def extractDatabaseConfigs(dfs: FileSystem, conf: Configuration, props: Properties): Unit = {
     val db = conf.get(ES_DB_DATABASE, "ERROR_NO_DATABASE_SUPPLIED")
     val shardMap = loadDbConfig(dfs, conf)
     val shardsByBaseName = shardMap.keys
       .groupBy { key => key match { case Side(baseOfKey) => baseOfKey ; case _ => key } }
       .filter { entry => entry._1.startsWith(db) }
 
-    LOG.info("Applying db configs to " + (shardsByBaseName.keys.size) + " task configurations for snapshot of DB: " + db)
-    // first shard is chosen to provide values that are the same in all metadata entries
+    LOG.info("Applying " + (shardsByBaseName.keys.size) + " task/db configurations for snapshot of database: " + db)
+    // get & append to properties the "global" values that don't change per-shard
     val globalMap = shardMap(shardsByBaseName(shardsByBaseName.keys.first).first)
     props.setProperty(ES_DB_USERNAME, globalMap("user"))
     props.setProperty(ES_DB_PORT, globalMap("port"))
     props.setProperty(ES_TASK_COUNT, shardsByBaseName.keys.size.toString)
 
-    // these props will be different for each shard's metadata of the db
+    // these props will be different for each shard, each task will be configed to read from one
     shardsByBaseName.keys.toSeq.sorted[String].zipWithIndex.foreach {
       entry => {
         val baseName = entry._1     // this is the DB name that task "taskId" will read in ETL jobs
-        val taskId = entry._2 + 1   // zipWithIndex is (0..size), taskId is (1...size)
+        val taskId = entry._2 + 1   // zipWithIndex is (0...numTasks), taskId is (1..numTasks)
         injectProperties(props, shardMap, shardsByBaseName(baseName), taskId)
       }
     }
@@ -84,7 +83,7 @@ class JsonDatabaseConfigExtractor extends DatabaseConfigExtractor {
   }
 
 
-  private def loadDbConfig(dfs: DistributedFileSystem, conf: Configuration): Map[String, Map[String, String]] = {
+  private def loadDbConfig(dfs: FileSystem, conf: Configuration): Map[String, Map[String, String]] = {
     val dbConfPath = new Path(conf.get(ES_DB_CONFIG_FILE_PATH, "ERROR_NO_DATABASE_CONFIG_PATH_FOUND"))
     val javaMap: java.util.Map[String, Any] =
       Json.parse[java.util.LinkedHashMap[String, Any]](
