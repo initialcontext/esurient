@@ -134,32 +134,32 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def generateSchemaJson(metaData: ResultSetMetaData, tableName: String): String = {
     // get a Set of primary key names for this table to include in the returned JSON
-    val primaryKeys = queryWithRetries(getPrimaryKeysFromConnection, tableName, retries) match {
-      case Some(resultSet) => {
-        try {
-          val names = scala.collection.mutable.Set[String]()
-          while (resultSet.next) {
-            names += resultSet.getString("COLUMN_NAME")
-          }
-          names.toSet // make immutable
-        } finally {
-          if (resultSet != null) { resultSet.close }
-        }
+    val resultSet = queryWithRetries(getPrimaryKeysFromConnection, tableName, retries)
+    val primaryKeys: Set[String] = resultSet match {
+      case Some(rSet)      => {
+        val names = scala.collection.mutable.Set[String]()
+        while (rSet.next) { names += rSet.getString("COLUMN_NAME") }
+        names.toSet // make immutable
       }
-      case None            => scala.collection.Set[String]()
+      case None            => Set[String]()
     }
-    // Generate Schema JSON, transform to String
-    Json.generate(
-      (1 to metaData.getColumnCount).map { index: Int =>
-        Map[String, Any](
-          "column" -> index,  
-          "name" -> metaData.getColumnName(index),
-          "type" -> metaData.getColumnTypeName(index),
-          "class" -> metaData.getColumnClassName(index),
-          "primary" -> primaryKeys.contains(metaData.getColumnName(index))
-        )
-      }.toList ++ appendShardId(metaData.getColumnCount + 1)
-    ).toString
+
+    try {
+      // Generate Schema JSON, transform to String
+      Json.generate(
+        (1 to metaData.getColumnCount).map { index: Int =>
+          Map[String, Any](
+            "column" -> index,  
+            "name" -> metaData.getColumnName(index),
+            "type" -> metaData.getColumnTypeName(index),
+            "class" -> metaData.getColumnClassName(index),
+            "primary" -> primaryKeys.contains(metaData.getColumnName(index))
+          )
+        }.toList ++ appendShardId(metaData.getColumnCount + 1)
+      ).toString
+    } finally {
+      resultSet.foreach { rSet => rSet.close }
+    }
   }
 
   // if this is a sharded table, append the shard id to the schema
@@ -210,10 +210,8 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
   }
 
   private def openConnection: Unit = {
-    connection = connection match {
-      case c: Connection if (c.isValid(0)) => c
-      case _ => close ; getConnection
-    }
+    close
+    connection = getConnection
   }
 
   private def handleRetryException(log: Logger, sqlEx: SQLException) {
