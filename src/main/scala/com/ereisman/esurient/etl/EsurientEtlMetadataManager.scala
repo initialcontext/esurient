@@ -145,7 +145,7 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       // ETL jobs that supply a monitoring host:port use table name for monitoring key
       ES_MONITORING_KEY           -> conf.get(ES_DB_TABLE_NAME, error),
       ES_MONITORING_HOST_PORT     -> conf.get(ES_MONITORING_HOST_PORT, ""),
-      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, ES_MONITORING_MSG_TEMPLATE_DEFAULT),
+      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, ES_DB_MONITORING_MSG_TEMPLATE_DEFAULT),
       ES_DB_BASE_OUTPUT_PATH      -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE              -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                  -> conf.get(ES_DB_TYPE, error),
