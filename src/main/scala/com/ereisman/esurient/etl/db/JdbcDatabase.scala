@@ -143,7 +143,10 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def produceResultSet(query: String): Option[ResultSet] = {
     val statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-    statement.setFetchSize(Integer.MIN_VALUE) // this will stream records rather than host in-mem
+    conf.get(ES_DB_SHARDED_TABLE) match {
+      case "bootstrap" => statement.setFetchSize(Integer.MIN_VALUE) // this will stream records rather than host in-mem
+      case _           => // do nothing, default results to store in memory for "update" jobs
+    }
     Some(statement.executeQuery(query))
   }
 
