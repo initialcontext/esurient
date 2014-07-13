@@ -46,6 +46,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     queryWithRetries(produceResultSet, "SELECT * FROM " + tableName, retries)
   }
 
+
   /**
    * Obtain all DB records produced within the update window specified in job properties.
    */
@@ -59,6 +60,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     queryWithRetries(produceResultSet, query, retries)
   }
 
+
   /**
    * Generate the JSON-based table schema for use by downstream post-processing jobs to
    * map table metadata to the formatted row data the ETL job will produce.
@@ -67,17 +69,10 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
    */
   override def getTableSchema: String = {
     LOG.info("Attempting to obtain schema info for table: " + tableName)
-
-    queryWithRetries(produceResultSet, "SELECT * FROM " + tableName + " LIMIT 1", retries) match {
-      case Some(resultSet) => try {
-          resultSet.next
-          generateSchemaJson(resultSet.getMetaData, tableName)
-        } finally {
-          if (resultSet != null) { resultSet.close }
-        }
-      case _               => "[ ]"
-    }
+    val primarySet = getPrimaryKeySet(tableName)
+    generateSchemaJson(primarySet, tableName)
   }
+
 
   /**
    * Close the Connection cleanly. Caller/Owner of Database objects must manage
@@ -89,6 +84,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
       case _             =>
     }
   }
+
 
   /**
    * The driver method subclasses will call to do the work.
@@ -118,6 +114,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     }
   }
 
+
   private def getPrimaryKeysFromConnection(tableName: String): Option[ResultSet] = {
     Some(
       connection
@@ -126,41 +123,56 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     )
   }
 
+
+  private def getPrimaryKeySet(tableName: String): Set[String] = {
+    // get a Set of primary key names for this table to include in the returned JSON
+    queryWithRetries(getPrimaryKeysFromConnection, tableName, retries) match {
+      case Some(rSet)      => {
+        try {
+          val names = scala.collection.mutable.Set[String]()
+          while (rSet.next) { names += rSet.getString("COLUMN_NAME") }
+          names.toSet // make immutable
+        } finally {
+          if (rSet != null) { rSet.close }
+        }
+      }
+      case None            => Set[String]()
+    }
+  }
+
+
   private def produceResultSet(query: String): Option[ResultSet] = {
     val statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
     statement.setFetchSize(Integer.MIN_VALUE) // this will stream records rather than host in-mem
     Some(statement.executeQuery(query))
   }
 
-  private def generateSchemaJson(metaData: ResultSetMetaData, tableName: String): String = {
-    // get a Set of primary key names for this table to include in the returned JSON
-    val resultSet = queryWithRetries(getPrimaryKeysFromConnection, tableName, retries)
-    val primaryKeys: Set[String] = resultSet match {
-      case Some(rSet)      => {
-        val names = scala.collection.mutable.Set[String]()
-        while (rSet.next) { names += rSet.getString("COLUMN_NAME") }
-        names.toSet // make immutable
-      }
-      case None            => Set[String]()
-    }
 
-    try {
-      // Generate Schema JSON, transform to String
-      Json.generate(
-        (1 to metaData.getColumnCount).map { index: Int =>
-          Map[String, Any](
-            "column" -> index,  
-            "name" -> metaData.getColumnName(index),
-            "type" -> metaData.getColumnTypeName(index),
-            "class" -> metaData.getColumnClassName(index),
-            "primary" -> primaryKeys.contains(metaData.getColumnName(index))
-          )
-        }.toList ++ appendShardId(metaData.getColumnCount + 1)
-      ).toString
-    } finally {
-      resultSet.foreach { rSet => rSet.close }
+  private def generateSchemaJson(primaryKeys: Set[String], tableName: String): String = {
+    queryWithRetries(produceResultSet, "SELECT * FROM " + tableName + " LIMIT 1", retries) match {
+      case Some(rSet) => {
+        val metaData = rSet.getMetaData
+        try {
+          // Generate Schema JSON, transform to String
+          Json.generate(
+            (1 to metaData.getColumnCount).map { index: Int =>
+              Map[String, Any](
+                "column" -> index,  
+                "name" -> metaData.getColumnName(index),
+                "type" -> metaData.getColumnTypeName(index),
+                "class" -> metaData.getColumnClassName(index),
+                "primary" -> primaryKeys.contains(metaData.getColumnName(index))
+              )
+            }.toList ++ appendShardId(metaData.getColumnCount + 1)
+          ).toString
+        } finally {
+          if (rSet != null) { rSet.close }
+        }
+      }
+      case _          => "[ ]"
     }
   }
+
 
   // if this is a sharded table, append the shard id to the schema
   private def appendShardId(columnIndex: Int): List[Map[String, Any]] = {
