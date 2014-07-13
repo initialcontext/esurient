@@ -167,8 +167,11 @@ class EsurientAutomaticHeartbeater(context: EsurientTask.Context, done: AtomicBo
 
     val timeStamp = System.currentTimeMillis / 1000L
     val formattedMsg = msgTemplate.get.format(monitorKey.get, taskId.get, value)  + " " + timeStamp
+    val echoStmt = "echo " + formattedMsg
+    val ncStmt = "/usr/bin/nc " + host.get + " " + port.get
+    val exitCode = echoStmt #| ncStmt !
 
-    Seq("echo", formattedMsg, "|", "/usr/bin/nc", host.get, port.get).! match {
+    exitCode match {
       case eCode: Int if (eCode != 0) =>
         LOG.warn("Monitoring ping to " + host.get + " failed with exit code: " + eCode)
 
