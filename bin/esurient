@@ -30,7 +30,7 @@ function runJob() {
   green
   echo -n '[*] '
   white
-  echo 'Esurient job completed.'
+  echo 'Esurient job submitted, check the JobTracker UI for run details.'
   off
   echo
   echo
