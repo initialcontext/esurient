@@ -77,10 +77,14 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
   /**
    * Close the Connection cleanly. Caller/Owner of Database objects must manage
    * the underlying connection's lifecycle themselves - remember to call this!
+   *
+   * NOTE: The match block is an ugly workaround due to MySQL JDBC Driver 5.0.x
+   *       containing a bug in the Connection#isValid method. We don't want to
+   *       upgrade to 5.1.x series as it has bigger bug in streaming read mode.
    */
   override def close: Unit = {
     connection match {
-      case c: Connection => c.close
+      case c: Connection => c.close ; connection = null
       case _             =>
     }
   }
@@ -224,14 +228,21 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     None
   }
 
+  /*
+   * Ugly hack here - we use 'null' as flag that Connection was
+   * reset or otherwise invalidated because we can't use Connection#isValid
+   * on JDBC MySQL driver 5.0.x series, but we need its streaming features.
+   */
   private def openConnection: Unit = {
-    close
-    connection = getConnection
+    connection match {
+      case c: Connection => // do nothing, the connection is still instantiated
+      case _             => connection = getConnection
+    }
+    Unit
   }
 
-  private def handleRetryException(log: Logger, sqlEx: SQLException) {
+  private def handleRetryException(log: Logger, sqlEx: SQLException): Unit = {
     LOG.warn("Query Attempt FAILED with error trace:")
     Utils.logException(log, sqlEx)
-    LOG.warn("Retrying Query...")
   }
 }
