@@ -60,12 +60,14 @@ object EsurientConstants {
     val ES_DB_RETRIES_DEFAULT                 = 3
     val ES_DB_QUICK_PAUSE_MILLIS              = 1000
     val ES_DB_RETRY_SLEEP_MILLIS              = 5000
-    val ES_DB_WINDOW_SECS_DEFAULT             = 86400 * 2 // 2 days
+    val ES_DB_UPDATE_WINDOW_SECS_DEFAULT      = (86400 * 3) // 3 days
     val ES_DB_BOOTSTRAP_MODE                  = "bootstrap"
     val ES_DB_UPDATE_MODE                     = "update"
     val ES_DB_UPDATE_COLUMN_DEFAULT           = "update_date"
     val ES_DB_SCHEMA_FILE_SUFFIX              = ".schema.json"
     val ES_DB_JOB_PROPS_FILE_SUFFIX           = "-snapshot-job.properties"
     val ES_DB_BASE_OUTPUT_PATH_DEFAULT        = "/user/" + System.getProperty("USER") + "/etl/snapshots"
+    val ES_DB_MONITORING_MSG_TEMPLATE_DEFAULT = "hadoop.etl.snapshot.heap.mb.%s.task%s %s"
     val ES_DB_OUTPUT_FORMAT_TSV               = "tsv"
 }
+

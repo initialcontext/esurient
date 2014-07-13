@@ -54,8 +54,8 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     LOG.info("Attempting update snapshot on table: " + tableName)
     val updateColumn = conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT)
     val timeStamp =
-      conf.getInt(ES_JOB_TIMESTAMP, Now) - conf.getInt(ES_DB_UPDATE_WINDOW_SECS, ES_DB_WINDOW_SECS_DEFAULT)
-    
+      conf.getInt(ES_JOB_TIMESTAMP, Now) - conf.getInt(ES_DB_UPDATE_WINDOW_SECS, ES_DB_UPDATE_WINDOW_SECS_DEFAULT)
+
     val query = "SELECT * FROM " + tableName + " WHERE " + updateColumn + " >= " + timeStamp
     queryWithRetries(produceResultSet, query, retries)
   }

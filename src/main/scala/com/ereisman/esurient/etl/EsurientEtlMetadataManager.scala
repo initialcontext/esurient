@@ -145,13 +145,13 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       // ETL jobs that supply a monitoring host:port use table name for monitoring key
       ES_MONITORING_KEY           -> conf.get(ES_DB_TABLE_NAME, error),
       ES_MONITORING_HOST_PORT     -> conf.get(ES_MONITORING_HOST_PORT, ""),
-      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, "hadoop.etl.snapshot.heap.mb.%s.task%s %s"),
+      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, ES_MONITORING_MSG_TEMPLATE_DEFAULT),
       ES_DB_BASE_OUTPUT_PATH      -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE              -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                  -> conf.get(ES_DB_TYPE, error),
       // TODO: make this test pluggable - there are many better ways to determine if table is sharded or not
       ES_DB_SHARDED_TABLE         -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
-      ES_DB_UPDATE_WINDOW_SECS    -> conf.get(ES_DB_UPDATE_WINDOW_SECS, error),
+      ES_DB_UPDATE_WINDOW_SECS    -> conf.getInt(ES_DB_UPDATE_WINDOW_SECS, ES_DB_UPDATE_WINDOW_SECS_DEFAULT).toString,
       ES_DB_UPDATE_COLUMN         -> conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT),
       // General EsurientTask boilerplate
       ES_JOB_NAME                 -> composeJobName,
@@ -159,7 +159,7 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       ES_TASK_AUTO_HEARTBEAT      -> "true",
       ES_LOG_HEARTBEATS           -> "true"
     ).map { entry => props.setProperty(entry._1, entry._2) }
-    
+
     props
   }
 
