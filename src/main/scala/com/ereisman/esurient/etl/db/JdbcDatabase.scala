@@ -190,8 +190,8 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
             Map[String, Any](
               "column"  -> columnIndex,
               "name"    -> "shard_id",
-              "type"    -> "INT UNSIGNED",
-              "class"   -> "java.lang.Long",
+              "type"    -> "INT",
+              "class"   -> "java.lang.Integer",
               "primary" -> "false"
             )
           )
