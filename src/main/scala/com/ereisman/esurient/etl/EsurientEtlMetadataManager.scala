@@ -218,6 +218,7 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       case "--updateCol" :: col :: tail       => conf.set(ES_DB_UPDATE_COLUMN, col)
       case "--monitorHostPort" :: mhp :: tail => conf.set(ES_MONITORING_HOST_PORT, mhp)
       case "--monitorMsg" :: mm :: tail       => conf.set(ES_MONITORING_MSG_TEMPLATE, mm)
+      case "--compression" :: codec :: tail   => conf.set(ES_DB_OUTPUT_COMP_TYPE, codec)
       case _                                  => // keep going
     }
     parseArgsIntoConf(args.tail)

@@ -1,5 +1,6 @@
 package com.ereisman.esurient
 
+
 /**
  * Constant definitions for Esurient project and its example jobs.
  * Includes Hadoop Configuration keys and their default values, and
@@ -52,6 +53,7 @@ object EsurientConstants {
     val ES_DB_BASE_OUTPUT_PATH                = "esurient.db.base.output.path"
     val ES_DB_UPDATE_COLUMN                   = "esurient.db.update.column" // to use in update mode
     val ES_DB_UPDATE_WINDOW_SECS              = "esurient.db.update.window.secs" // also for update mode
+    val ES_DB_OUTPUT_COMP_TYPE                = "esurient.db.output.compression.type"
 
     // Database ETL default constants ///////////////////////////////
     val ES_DB_TYPE_MYSQL                      = "mysql"
@@ -64,10 +66,11 @@ object EsurientConstants {
     val ES_DB_BOOTSTRAP_MODE                  = "bootstrap"
     val ES_DB_UPDATE_MODE                     = "update"
     val ES_DB_UPDATE_COLUMN_DEFAULT           = "update_date"
-    val ES_DB_SCHEMA_FILE_SUFFIX              = ".schema.json"
+    val ES_DB_SCHEMA_FILE_SUFFIX              = "-schema.json"
     val ES_DB_JOB_PROPS_FILE_SUFFIX           = "-snapshot-job.properties"
     val ES_DB_BASE_OUTPUT_PATH_DEFAULT        = "/user/" + System.getProperty("USER") + "/etl/snapshots"
     val ES_DB_MONITORING_MSG_TEMPLATE_DEFAULT = "hadoop.etl.snapshot.heap.mb.%s.task%s %s"
     val ES_DB_OUTPUT_FORMAT_TSV               = "tsv"
+    val ES_DB_OUTPUT_COMP_TYPE_DEFAULT        = "org.apache.hadoop.io.compress.GzipCodec"
 }
 

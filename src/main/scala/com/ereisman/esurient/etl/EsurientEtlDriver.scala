@@ -1,14 +1,13 @@
 package com.ereisman.esurient.etl
 
 
-import java.sql.ResultSet
-import java.sql.SQLException
-import java.io.IOException
-import java.io.BufferedOutputStream
+import java.sql.{ResultSet,SQLException}
+import java.io.{OutputStream,BufferedOutputStream,IOException}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.io.compress.{GzipCodec,CompressionCodecFactory}
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.etl.db.{Database,DatabaseFactory}
@@ -39,7 +38,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
   var db: Database = null
   var rs: ResultSet = null
   var dfs: FileSystem = null
-  var stream: BufferedOutputStream = null
+  var stream: OutputStream = null
   var formatter: EtlOutputFormatter = null
   var outPath: Path = null
 
@@ -56,12 +55,10 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
   // (re)initialize class state for this snap attempt, execute the snapshot
   private def performSnapshot(conf: Configuration): Unit = {
-    // Hadoop I/O objects
-    dfs = Utils.getDfs(conf)
-    outPath = getOutputPath(conf)
-    stream = new BufferedOutputStream(dfs.create(outPath, true), BUFFER_SIZE)
+    // initialize filesystem resources
+    initializeFsResources
 
-    // database set up and query submission
+    // obtain db connection and execute query
     db = DatabaseFactory.getDatabase(conf)
     rs = submitQuery(conf)
 
@@ -70,15 +67,29 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
       while (rs.next && !rs.isAfterLast) {
         outputFormatter.formatRecord(rs, stream)
       }
-    } while (moreResults)
+    } while (thereAreMoreResults)
   }
 
 
-  private def moreResults: Boolean = {
+  private def initializeFsResources: Unit = {
+    dfs = Utils.getDfs(conf)
+    outPath = getOutputPath(conf)
+    
+    val bos = new BufferedOutputStream(dfs.create(outPath, true), BUFFER_SIZE)
+    val codecClass = conf.get(ES_DB_OUTPUT_COMP_TYPE, ES_DB_OUTPUT_COMP_TYPE_DEFAULT)
+    
+    stream = (new CompressionCodecFactory(conf)).getCodecByClassName(codecClass) match {
+      case gzc: GzipCodec => gzc.createOutputStream(bos)
+      case _                   => bos
+    }
+  }
+
+
+  private def thereAreMoreResults: Boolean = {
     LOG.info("Attempting to fetch next ResultSet...")
     rs.getStatement.getMoreResults match {
       case true => rs = rs.getStatement.getResultSet ; true
-      case _    => false
+      case _    => LOG.info("No more ResultSets to process.") ; false
     }
   }
 
