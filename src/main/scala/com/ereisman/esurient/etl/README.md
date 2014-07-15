@@ -6,7 +6,7 @@ To set up and run the Esurient ETL job:
 
 * Place a file on HDFS containing a JSON-serialized list of databases and connection info. Alternately, implement your own DatabaseConfigExtractor subclass (see `etl.format` package)
 
-* Run `bin/setup-etl-job` supplying the args needed to customize the run (password, db name to look up in JSON config file, update or bootstrap table mode, etc.) - See `bin/setup-etl-job -h` or `EsurientEtlMetadataManager` for examples of args you can pass.
+* Run `bin/setup-etl-job` supplying the args needed to customize the run (password, db name to look up in JSON config file, update or bootstrap table mode, etc.) - See or `EsurientEtlMetadataManager` for examples of args you can pass.
 
 * Setup script, if it was able to connect to the db you selected, will have deposited 2 files on hdfs: a JSON-based schema of the table to be snapshotted, and a Java Properties files configured for a db snapshot job on that table.
 

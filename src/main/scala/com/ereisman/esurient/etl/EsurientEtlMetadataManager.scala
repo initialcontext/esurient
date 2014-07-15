@@ -44,13 +44,14 @@ object EsurientEtlMetadataManager {
  *   --dbPass password \
  *   --monitorHostPort host:port \
  *   --updateCol col_name \
- *   --window updateWindowSecs
+ *   --window updateWindowSecs \
+ *   --compression gzip
  * </code>
  *
  * Where 'VERSION' is whatever your current Esurient build produces.
  *
  * Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
- *       The <code>--monitorHostPort</code> arg is also optional
+ *       The <code>--monitorHostPort</code>, <code>--compression</code> args are also optional.
  */
 class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuration, val extractor: DatabaseConfigExtractor) {
   import com.ereisman.esurient.etl.EsurientEtlMetadataManager.LOG

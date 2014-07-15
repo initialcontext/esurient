@@ -6,13 +6,11 @@ A Lightweight framework for safely running generic distributed computing process
 Written in Scala, the user can define a driver class extending `com.ereisman.esurient.EsurientTask` and define a single
 `execute` method taking a `EsurientTask.Context` object as its argument.
 
-There are no keys and values to deal with, no mandatory sort, shuffle, or reduce stages. Task heartbeats are handled for you
-by default so you can focus on _getting stuff done_. Your tasks get to piggyback on Hadoop's own fault-tolerance mechanisms.
+There are no keys and values to deal with, no mandatory sort, shuffle, or reduce stages. Task's progress heartbeats can be handled manually by the user's task or automatically without danger of zombie processes holding cluster slots. Your tasks get to piggyback on Hadoop's own fault-tolerance mechanisms: failed tasks will be rerun on an individual level several times before the whole job is ruled a fail by Hadoop.
 
-The EsurientTask.Context object provides runtime access to low-level Hadoop plumbing API's _and_ the job's Hadoop Configuration which is injected with user-defined job properties by Esurient at runtime. A _unique task ID_ is also injected so the user can deterministically assign work to each or any task in the job. Since Esurient assigns monotonically increasing integer task ID's, partitioning tasks into work groups is easy.
+The `EsurientTask.Context` object provides runtime access to low-level Hadoop plumbing API's _and_ the job's Hadoop Configuration which is injected with user-defined job properties by Esurient at runtime. A _unique task ID_ is also injected so the user can deterministically assign work to each or any task in the job. Since Esurient assigns monotonically increasing integer task ID's, partitioning tasks into work groups is easy.
 
-See the code in the `examples` package for more ideas. In conclusion, Esurient is ideal for users who need to do distributed computing that isn't a natural fit for MapReduce. Some examples:
-
+See the code in the `examples` package for more ideas. Esurient is ideal for users who need to do distributed computing that isn't a natural fit for MapReduce. Some examples:
 
 * Node-local or HDFS filesystem chores in a distribtued way
 * Database snapshots or other ETL (See Esurient example jobs and 'etl' package)
@@ -23,7 +21,7 @@ See the code in the `examples` package for more ideas. In conclusion, Esurient i
 
 
 ### Limitations ###
-This technique isn't magic - although we get a user-defined number of Mapper processes, unique task IDs, and global job configuration to share marching orders, we don't have control over which cluster nodes will host each Mapper process. This makes some activities a bit trickier. To bootstrap message passing, cluster processes might communicate with the process that launched the job. For coordinating more complex activities (leader election, etc.) tools like Apache Zookeeper come in handy.
+This technique isn't magic - although we get a user-defined number of Mapper processes, unique task IDs, and global job configuration to share marching orders, we don't have control over which cluster nodes will host each Mapper process. This makes some activities a bit trickier. To bootstrap message passing, cluster processes might communicate with the process that launched the job. For coordinating more complex activities (leader election, etc.) tools like Apache Zookeeper come in handy. Other projects using the same technique to execute on Hadoop include Apache Giraph and Apache Sqoop, among others.
 
 
 ### Building the Project ###
@@ -60,4 +58,4 @@ The Esurient `etl` package includes a fully functional, customizable, database s
 
 
 ### Warning ###
-This software uses a stable and proven method for running non-MapReduce, long-lived processes on a Hadoop cluster. However, Esurient specializes in giving you all the rope you need to hang yourself, so _use common sense_. Additional caution is advised when your Esurient job will share a cluster with other users' jobs.
+This software uses a stable and proven method for running non-MapReduce, long-lived processes on a Hadoop cluster. However, Esurient specializes in giving you all the rope you need to hang yourself, so _use common sense_. Additional caution is advised when your Esurient job will share a cluster with other users' jobs. Make sure job authors understand the Hadoop Configuration values they override, and the resource commitments job tasks will require on the cluster.

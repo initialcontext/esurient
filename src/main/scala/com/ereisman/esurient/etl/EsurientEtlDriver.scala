@@ -79,7 +79,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
     val codecClass = conf.get(ES_DB_OUTPUT_COMP_TYPE, ES_DB_OUTPUT_COMP_TYPE_DEFAULT)
     
     stream = (new CompressionCodecFactory(conf)).getCodecByClassName(codecClass) match {
-      case gzc: GzipCodec => gzc.createOutputStream(bos)
+      case gzc: GzipCodec => gzc.createOutputStream(bos) // TODO: break this out into pluggable comp manager class
       case _                   => bos
     }
   }
@@ -138,7 +138,8 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
         conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED"),
         conf.get(ES_JOB_TIMESTAMP, "ERROR_NO_JOB_TIMESTAMP_SUPPLIED"),
         conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString
-      ).mkString("_")
+      ).mkString("_") +
+      ".gz" // TODO: make GZIP pluggable, not default. add this method to a "compression manager" class ASAP
     )
   }
 
