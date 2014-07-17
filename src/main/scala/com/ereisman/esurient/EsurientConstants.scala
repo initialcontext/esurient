@@ -18,16 +18,16 @@ object EsurientConstants {
     val ES_TASK_AUTO_HEARTBEAT_MILLIS         = "esurient.task.auto.heartbeat.millis"
     val ES_LOG_HEARTBEATS                     = "esurient.log.heartbeats"
     val ES_JOB_TIMESTAMP                      = "esurient.job.timestamp" // global start stamp for an esurient job
-    val ES_MONITORING_HOST_PORT               = "esurient.monitoring.host.port" // host:port string for pinging monitoring endpoint
-    val ES_MONITORING_MSG_TEMPLATE            = "esurient.monitoring.msg.template" // with %s format fields for job name & integer value
-    val ES_MONITORING_KEY                     = "esurient.monitoring.key"
+    val ES_METRICS_HOST_PORT                  = "esurient.metrics.host.port" // host:port string for pinging monitoring endpoint
+    val ES_HEARTBEAT_METRICS_MSG              = "esurient.heartbeat.metrics.msg" // see EsurientStats
+    val ES_METRICS_KEY                        = "esurient.metrics.key" // subpartition metrics reported by job name or similar
 
     // Hadoop Configuration Default Values /////////////////////////
     val ES_ERROR_CODE                         = -1
     val ES_TASK_COUNT_DEFAULT                 = 20
     val BUFFER_SIZE                           = 65536 
     val ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT = 8000
-    val ES_MONITORING_MSG_TEMPLATE_DEFAULT = "esurient.heap.mb.%s.task%s %s" 
+    val ES_HEARTBEAT_METRICS_MSG_DEFAULT      = "esurient.heap.mb.%s.task%s %s" // %s is: job name, taskId, integral metric value
 
     // to be combined with taskId to form the single-task-specific config keys
     // in practice users can make up their own or use this as a prefix, etc.
@@ -69,7 +69,7 @@ object EsurientConstants {
     val ES_DB_SCHEMA_FILE_SUFFIX              = "-schema.json"
     val ES_DB_JOB_PROPS_FILE_SUFFIX           = "-snapshot-job.properties"
     val ES_DB_BASE_OUTPUT_PATH_DEFAULT        = "/user/" + System.getProperty("USER") + "/etl/snapshots"
-    val ES_DB_MONITORING_MSG_TEMPLATE_DEFAULT = "hadoop.etl.snapshot.heap.mb.%s.task%s %s"
+    val ES_DB_HEARTBEAT_METRICS_MSG_DEFAULT   = "hadoop.etl.snapshot.heap.mb.%s.task%s %s"
     val ES_DB_OUTPUT_FORMAT_TSV               = "tsv"
     val ES_DB_OUTPUT_COMP_TYPE_DEFAULT        = "org.apache.hadoop.io.compress.GzipCodec"
 }

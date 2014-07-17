@@ -13,10 +13,13 @@ import org.apache.log4j.Logger
 import com.ereisman.esurient.etl.db.{Database,DatabaseFactory}
 import com.ereisman.esurient.EsurientConstants._
 import com.ereisman.esurient.etl.format.EtlOutputFormatter
+import com.ereisman.esurient.util.EsurientStats
 
 
 object EsurientEtlDriver {
   val LOG = Logger.getLogger(classOf[EsurientEtlDriver])
+  val RECORDS_PROCESSED_METRICS_MSG_FORMAT = "hadoop.etl.snapshots.records.processed.%s.task%s %s"
+  val REPORT_METRIC_PERIOD = 1000L
 }
 
 
@@ -30,11 +33,11 @@ object EsurientEtlDriver {
  * (perhaps via bin/setup-etl-job) has produced a Java Properties
  * file on HDFS which this driver will use to configure this snapshot.
  */
-class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputFormatter) {
+class EsurientEtlDriver(val conf: Configuration, val stats: EsurientStats, val outputFormatter: EtlOutputFormatter) {
   import com.ereisman.esurient.etl.EsurientEtlDriver._
-
   // The contents of these fields are subject to reinitialization during retries,
   // and their lifecycles are managed by this task. Therefore, they are mutable.
+  val codecClass = conf.get(ES_DB_OUTPUT_COMP_TYPE, ES_DB_OUTPUT_COMP_TYPE_DEFAULT)
   var db: Database = null
   var rs: ResultSet = null
   var dfs: FileSystem = null
@@ -62,21 +65,34 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
     db = DatabaseFactory.getDatabase(conf)
     rs = submitQuery(conf)
 
+    // set up metrics counter for records processed
+    var recordCounter: Long = 0L
+
     // parse & clean each record, then write to HDFS
     do {
       while (rs.next && !rs.isAfterLast) {
         outputFormatter.formatRecord(rs, stream)
+        recordCounter = incrementRecordCounter(recordCounter)
       }
     } while (thereAreMoreResults)
   }
 
 
+  private def incrementRecordCounter(count: Long): Long = {
+    count match {
+      case x: Long if (x % REPORT_METRIC_PERIOD == 0L) =>
+        stats.pingMetrics(RECORDS_PROCESSED_METRICS_MSG_FORMAT, count.toString)
+      case _ => // do nothing
+    }
+    count + 1
+  }
+
+
   private def initializeFsResources: Unit = {
-    dfs = Utils.getDfs(conf)
+    dfs = EtlUtils.getDfs(conf)
     outPath = getOutputPath(conf)
     
     val bos = new BufferedOutputStream(dfs.create(outPath, true), BUFFER_SIZE)
-    val codecClass = conf.get(ES_DB_OUTPUT_COMP_TYPE, ES_DB_OUTPUT_COMP_TYPE_DEFAULT)
     
     stream = (new CompressionCodecFactory(conf)).getCodecByClassName(codecClass) match {
       case gzc: GzipCodec => gzc.createOutputStream(bos) // TODO: break this out into pluggable comp manager class
@@ -105,7 +121,7 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
 
 
   private def blowUp(log: Logger, ex: Throwable): Unit = {
-    Utils.logException(LOG, ex)
+    EtlUtils.logException(LOG, ex)
     cleanupPartialOutput
     throw new RuntimeException(ex)
   }
@@ -139,8 +155,15 @@ class EsurientEtlDriver(val conf: Configuration, val outputFormatter: EtlOutputF
         conf.get(ES_JOB_TIMESTAMP, "ERROR_NO_JOB_TIMESTAMP_SUPPLIED"),
         conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString
       ).mkString("_") +
-      ".gz" // TODO: make GZIP pluggable, not default. add this method to a "compression manager" class ASAP
+      getFileTypeSuffix
     )
+  }
+
+
+  // TODO: make GZIP pluggable, not default. add this method to a "compression manager" class ASAP
+  private def getFileTypeSuffix = conf.get(ES_DB_OUTPUT_COMP_TYPE, "gzip") match {
+    case "gzip" => ".gz"
+    case _      => ""
   }
 
 

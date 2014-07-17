@@ -23,7 +23,7 @@ class EsurientEtlTask extends EsurientTask {
     val formatter = EtlOutputFormatterFactory.getFormatter(jobConfig)
 
     // execute the ETL job
-    new com.ereisman.esurient.etl.EsurientEtlDriver(jobConfig, formatter)
+    new com.ereisman.esurient.etl.EsurientEtlDriver(jobConfig, stats, formatter)
   }  
 
 }

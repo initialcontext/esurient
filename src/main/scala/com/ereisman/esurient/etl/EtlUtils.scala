@@ -8,7 +8,7 @@ import org.apache.hadoop.fs.{Path,FileSystem}
 import org.apache.log4j.Logger
 
 
-object Utils {
+object EtlUtils {
   def getDfs(conf: Configuration): FileSystem = {
      val nnUri = (new Path(conf.get("fs.default.name", "ERROR_NO_FS_DEFAULT_NAME_FOUND"))).toUri
      FileSystem.get(nnUri, conf, System.getProperty("USER"))

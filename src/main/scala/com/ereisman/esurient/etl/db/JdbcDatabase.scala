@@ -15,7 +15,7 @@ import java.util.Properties
 import com.codahale.jerkson._
 
 import com.ereisman.esurient.EsurientConstants._
-import com.ereisman.esurient.etl.Utils
+import com.ereisman.esurient.etl.EtlUtils
 
 
 object JdbcDatabase {
@@ -225,7 +225,7 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def handleFatal(log: Logger, ex: Exception): Option[ResultSet] = {
     close
-    Utils.logFatal(LOG, ex)
+    EtlUtils.logFatal(LOG, ex)
     None
   }
 
@@ -244,6 +244,6 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def handleRetryException(log: Logger, sqlEx: SQLException): Unit = {
     LOG.warn("Query Attempt FAILED with error trace:")
-    Utils.logException(log, sqlEx)
+    EtlUtils.logException(log, sqlEx)
   }
 }

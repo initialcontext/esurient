@@ -42,7 +42,7 @@ object EsurientEtlMetadataManager {
  *   --table table_name \
  *   --mode bootstrap|update \
  *   --dbPass password \
- *   --monitorHostPort host:port \
+ *   --metricsHostPort host:port \
  *   --updateCol col_name \
  *   --window updateWindowSecs \
  *   --compression gzip
@@ -51,13 +51,13 @@ object EsurientEtlMetadataManager {
  * Where 'VERSION' is whatever your current Esurient build produces.
  *
  * Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
- *       The <code>--monitorHostPort</code>, <code>--compression</code> args are also optional.
+ *       The <code>--metricsHostPort</code>, <code>--compression</code> args are also optional.
  */
 class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuration, val extractor: DatabaseConfigExtractor) {
   import com.ereisman.esurient.etl.EsurientEtlMetadataManager.LOG
 
   parseArgsIntoConf(args.toList)
-  val dfs = Utils.getDfs(conf)
+  val dfs = EtlUtils.getDfs(conf)
 
   try {
     checkCreateOutputPath
@@ -138,15 +138,15 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
 
     Map[String, String](
       // System configs
-      "mapred.child.java.opts"  -> "-Xmx2G -Xms1G",
+      "mapred.child.java.opts"    -> "-Xmx2G -Xms1G",
       // ETL-specific configs
-      ES_DB_PASSWORD            -> conf.get(ES_DB_PASSWORD, error),
-      ES_DB_MODE                -> conf.get(ES_DB_MODE, error),
-      ES_DB_TABLE_NAME          -> conf.get(ES_DB_TABLE_NAME, error),
+      ES_DB_PASSWORD              -> conf.get(ES_DB_PASSWORD, error),
+      ES_DB_MODE                  -> conf.get(ES_DB_MODE, error),
+      ES_DB_TABLE_NAME            -> conf.get(ES_DB_TABLE_NAME, error),
       // ETL jobs that supply a monitoring host:port use table name for monitoring key
-      ES_MONITORING_KEY           -> conf.get(ES_DB_TABLE_NAME, error),
-      ES_MONITORING_HOST_PORT     -> conf.get(ES_MONITORING_HOST_PORT, ""),
-      ES_MONITORING_MSG_TEMPLATE  -> conf.get(ES_MONITORING_MSG_TEMPLATE, ES_DB_MONITORING_MSG_TEMPLATE_DEFAULT),
+      ES_METRICS_KEY              -> conf.get(ES_DB_TABLE_NAME, error),
+      ES_METRICS_HOST_PORT        -> conf.get(ES_METRICS_HOST_PORT, ""), // "" will default EsurientStats to no-op mode
+      ES_HEARTBEAT_METRICS_MSG    -> conf.get(ES_HEARTBEAT_METRICS_MSG, ES_DB_HEARTBEAT_METRICS_MSG_DEFAULT),
       ES_DB_BASE_OUTPUT_PATH      -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE              -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                  -> conf.get(ES_DB_TYPE, error),
@@ -217,8 +217,8 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       case "--mode" :: mode :: tail           => conf.set(ES_DB_MODE, mode)
       case "--window" :: secs :: tail         => conf.setInt(ES_DB_UPDATE_WINDOW_SECS, secs.toInt)
       case "--updateCol" :: col :: tail       => conf.set(ES_DB_UPDATE_COLUMN, col)
-      case "--monitorHostPort" :: mhp :: tail => conf.set(ES_MONITORING_HOST_PORT, mhp)
-      case "--monitorMsg" :: mm :: tail       => conf.set(ES_MONITORING_MSG_TEMPLATE, mm)
+      case "--metricsHostPort" :: mhp :: tail => conf.set(ES_METRICS_HOST_PORT, mhp)
+      case "--metricsMsg" :: mm :: tail       => conf.set(ES_HEARTBEAT_METRICS_MSG, mm)
       case "--compression" :: codec :: tail   => conf.set(ES_DB_OUTPUT_COMP_TYPE, codec)
       case _                                  => // keep going
     }
