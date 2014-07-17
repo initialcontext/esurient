@@ -18,7 +18,7 @@ import com.ereisman.esurient.util.EsurientStats
 
 object EsurientEtlDriver {
   val LOG = Logger.getLogger(classOf[EsurientEtlDriver])
-  val RECORDS_PROCESSED_METRICS_MSG_FORMAT = "hadoop.etl.snapshots.records.processed.%s.task%s %s"
+  val RECORDS_PROCESSED_METRICS_MSG_FORMAT = "hadoop.etl.snapshot.records.processed.%s.task%s %s"
   val REPORT_METRIC_PERIOD = 1000L
 }
 
