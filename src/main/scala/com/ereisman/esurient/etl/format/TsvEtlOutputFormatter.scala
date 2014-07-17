@@ -36,10 +36,13 @@ class TsvEtlOutputFormatter(val conf: Configuration) extends EtlOutputFormatter 
   private def getRowAsUtfBytes(resultSet: ResultSet): Array[Byte] = {
     var cols = getColCount(resultSet)
     val tsv: String = (1 to cols).map { index: Int =>
-      resultSet.getObject(index).toString match {
-        case null | "null" | "NULL" => "NULL"
-        case str: String            =>
+      resultSet.getObject(index) match {
+        case null                   => "NULL"
+        case obj: java.lang.Object  => obj.toString match {
+          case str: String =>
           str.replaceAll("\r", """\\r""").replaceAll("\n", """\\n""").replaceAll("\t", """\\t""")
+          case _          => LOG.warn("Bad data record encountered at column " + index) ; "NULL"
+        }
       }
     }.toList.mkString("\t")
 
