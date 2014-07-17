@@ -32,16 +32,17 @@ class EsurientStats(val context: EsurientTask.Context) {
 
   /**
    * Ping a metrics endpoint with a user-supplied String formatting key and
-   * an integral value. Idiot simple for now.
-   * NOTE: No mutable shared state; thread-safe for threaded callers.
+   * an integral value. Idiot simple for now to interact with a particular framework.
    */
   def pingMetrics(msgFormat: String, value: String): Unit = {
-    host.foreach { h =>
-      val timeStamp = System.currentTimeMillis / 1000L
-      val formattedMsg = msgFormat.format(metricsKey.get, taskId.get, value)  + " " + timeStamp
-      val echoStmt = "echo " + formattedMsg
-      val ncStmt = "/usr/bin/nc " + h + " " + port.get
-      statsShellOut(echoStmt, ncStmt)
+    synchronized {
+      host.foreach { h =>
+        val timeStamp = System.currentTimeMillis / 1000L
+        val formattedMsg = msgFormat.format(metricsKey.get, taskId.get, value)  + " " + timeStamp
+        val echoStmt = "echo " + formattedMsg
+        val ncStmt = "/usr/bin/nc " + h + " " + port.get
+        statsShellOut(echoStmt, ncStmt)
+      }
     }
   }
 
@@ -61,7 +62,7 @@ class EsurientStats(val context: EsurientTask.Context) {
 
   private def statsShellOut(cmd1: String, cmd2: String): Unit = {
     import sys.process._
-    val exitCode: Int = cmd1 #| cmd2 !
+    val exitCode = cmd1 #| cmd2 !
 
     exitCode match {
       case 0          => Unit // do nothing

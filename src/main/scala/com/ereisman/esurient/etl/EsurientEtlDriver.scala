@@ -72,7 +72,7 @@ class EsurientEtlDriver(val conf: Configuration, val stats: EsurientStats, val o
     do {
       while (rs.next && !rs.isAfterLast) {
         outputFormatter.formatRecord(rs, stream)
-        recordCounter = incrementRecordCounter(recordCounter)
+        //recordCounter = incrementRecordCounter(recordCounter)
       }
     } while (thereAreMoreResults)
   }
