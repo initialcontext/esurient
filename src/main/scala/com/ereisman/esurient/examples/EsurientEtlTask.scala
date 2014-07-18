@@ -5,7 +5,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.EsurientTask
-import com.ereisman.esurient.etl.format.EtlOutputFormatterFactory
+import com.ereisman.esurient.etl.format.{EtlOutputFormatterFactory,GzipOutStream}
 
 
 /**
@@ -21,9 +21,10 @@ class EsurientEtlTask extends EsurientTask {
     val jobConfig = context.getConfiguration
     // this is pluggable - write your own output class (see etl.format package)
     val formatter = EtlOutputFormatterFactory.getFormatter(jobConfig)
+    // select a compression codec for the HDFS output files
+    val gzipOutput = new GzipOutStream(jobConfig)
 
-    // execute the ETL job
-    new com.ereisman.esurient.etl.EsurientEtlDriver(jobConfig, stats, formatter)
+    // execute the configured ETL job
+    new com.ereisman.esurient.etl.EsurientEtlDriver(jobConfig, stats, formatter, gzipOutput)
   }  
-
 }

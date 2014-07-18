@@ -28,6 +28,7 @@ object EsurientConstants {
     val BUFFER_SIZE                           = 65536 
     val ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT = 8000
     val ES_HEARTBEAT_METRICS_MSG_DEFAULT      = "esurient.heap.mb.%s.task%s %s" // %s is: job name, taskId, integral metric value
+    val ES_METRICS_SEND_TIMEOUT               = 1000 // timeout fast if metrics services are sluggish
 
     // to be combined with taskId to form the single-task-specific config keys
     // in practice users can make up their own or use this as a prefix, etc.

@@ -60,8 +60,14 @@ class EsurientHeartbeater(context: EsurientTask.Context, stats: EsurientStats, d
     LOG.info("HEARTBEAT at " + DATE_FORMATTER.format(new java.util.Date) +
       " | Heap Size: Used(" + used + " MB) Free(" + free + " MB)")
 
-    // only pings stats endpoint if host:port were provided in job.properties file 
-    stats.pingMetrics(metricsFormatStr, used.toString)
+    // only pings stats endpoint if config'd to in job properties file 
+    stats.pushMetric(
+      Map[String, String](
+        "msgFormat"   -> metricsFormatStr,
+        "metricValue" -> used.toString,
+        "timeStamp"   -> (System.currentTimeMillis / 1000L).toString
+      )
+    )
   }
 }
 
