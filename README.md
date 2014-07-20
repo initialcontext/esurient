@@ -34,6 +34,7 @@ Execute `bin/build` to build the project, execute the test suites, and produce t
 * a "far jar" JAR file (including all library deps) to be run with `hadoop jar` as a standalone application.
 * a "bundle" tar.gz which is a full "binary distribution" including bin scripts, the fat jar.
 
+### User Defined Jobs ###
 User defined classes must subclass `com.ereisman.esurient.EsurientTask`, and define one method, `execute` which accepts a single parameter: the `EsurientTask.Context` object. The Context wraps all Hadoop/Esurient framework metadata and user-defined job data, including the spawned task's _unique runtime task ID_. See code in the `com.ereisman.esurient.examples` package.
 
 You may place user-defined code into the examples package inside the Esurient project, and it will be built and packaged inside the Esurient JAR artifacts.
