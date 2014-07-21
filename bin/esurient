@@ -15,25 +15,31 @@ function off() {
   echo -en "\x1B[0m"
 }
 
+function pretty() {
+  green
+  echo -n '[*] '
+  white
+  echo $@
+  off
+}
+
 function runJob() {
   ESURIENT_JAR="$1"
   shift
   PROPS_PATH="$1"
   shift
 
-  green
-  echo -n '[*] '
-  white
-  echo "Esurient Job Executing with jar path: ${ESURIENT_JAR}, properties file path: ${PROPS_PATH}, and 'hadoop jar' args: $@"
-  off
+  pretty "Esurient Job executing:"
+  pretty "Jar path: ${ESURIENT_JAR}"
+  pretty "Properties file path: ${PROPS_PATH}"
+  pretty "'hadoop jar' args supplied: $@"
+  echo
+
   HADOOP_CLASSPATH=`hadoop classpath` hadoop jar "$ESURIENT_JAR" com.ereisman.esurient.hadoop.EsurientTool $@ $PROPS_PATH
-  green
-  echo -n '[*] '
-  white
-  echo 'Esurient job submitted, check the JobTracker UI for run details.'
-  off
+  
+  pretty 'Esurient job submitted, check the JobTracker UI for run details.'
   echo
-  echo
+  
   exit 0
 }
 
@@ -65,6 +71,8 @@ if [[ $# == 0 || "$1" == '-h' || "$1" == '--help' ]] ; then
   usage
 fi
 
+# Do this silly thing instead of 'getopts' because we need to leave
+# the Hadoop commands intact (-libjars, -files, etc.)
 while [[ "$1" == '-j' || "$1" == '-p' ]] ; do
   if [[ "$1" == '-j' ]] ; then
     shift
