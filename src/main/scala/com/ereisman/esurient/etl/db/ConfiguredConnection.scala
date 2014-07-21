@@ -18,8 +18,8 @@ trait ConfiguredConnection {
   def getConnectionProperties(user: String, pass: String): Properties = {
     val props = new Properties
     Map(
-      "userName" -> user,
-      "passWord" -> pass
+      "username" -> user,
+      "password" -> pass
     ).map { entry => props.setProperty(entry._1, entry._2) }
 
     props
