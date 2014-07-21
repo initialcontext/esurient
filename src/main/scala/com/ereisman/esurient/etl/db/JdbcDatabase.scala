@@ -215,7 +215,11 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
     LOG.info("JDBC Connection URL: " + url + " as db user: " + userName)
     val props = getConnectionProperties(userName, passWord)
     val connection = DriverManager.getConnection(url, props)
+
+    // configure connection for optimized read-only that all JDBC drivers will understand
+    connection.setAutoCommit(false)
     connection.setReadOnly(true)
+
     // return the connection
     connection
   }
