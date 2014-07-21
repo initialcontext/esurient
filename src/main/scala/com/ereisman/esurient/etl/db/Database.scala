@@ -1,8 +1,7 @@
 package com.ereisman.esurient.etl.db
 
 
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
+import java.sql.{ResultSet,ResultSetMetaData,Statement}
 
 /**
  * Base for all Database classes. Simple interface to retrieve a RecordSet
@@ -41,6 +40,11 @@ trait Database {
    */
   def updateTableSnapshot: Option[ResultSet] = { None }
 
+  /**
+   * Perform JDBC vendor-specific functions on a newly-created db Statement object.
+   * @param statement the Statement in question.
+   */
+  def configureStatement(statment: Statement): Unit = { }
 
   /**
    * Obtain table schema in JSON format, as a String. The caller will presumably write this

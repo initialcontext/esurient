@@ -4,12 +4,7 @@ package com.ereisman.esurient.etl.db
 import org.apache.hadoop.conf.Configuration
 import org.apache.log4j.Logger
 
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
 import java.sql.Statement
-import java.sql.SQLException
 import java.util.Properties
 
 import com.ereisman.esurient.EsurientConstants._
@@ -41,5 +36,11 @@ class MySqlDatabase(conf: Configuration) extends JdbcDatabase(conf, "com.mysql.j
     ).foreach { entry => props.setProperty(entry._1, entry._2) } 
 
     props
+  }
+
+
+  // this is MySQL-speak for "stream the records instead of hosting in memory" - which we want!!
+  override def configureStatement(stmt: Statement): Unit = {
+    stmt.setFetchSize(Integer.MIN_VALUE)
   }
 }

@@ -147,11 +147,8 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
 
   private def produceResultSet(query: String): Option[ResultSet] = {
     val statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-    conf.get(ES_DB_MODE) match {
-      // bootstrap runs should stream records rather than host in-mem
-      case ES_DB_BOOTSTRAP_MODE => statement.setFetchSize(Integer.MIN_VALUE)
-      case _                    => // do nothing, default to store results in memory for "update" jobs
-    }
+    // no-op in base class, hopefully overridden in vendor-specific way in subclasses
+    configureStatement(statement)
     Some(statement.executeQuery(query))
   }
 
