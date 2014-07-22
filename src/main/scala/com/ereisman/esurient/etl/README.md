@@ -12,5 +12,5 @@ To set up and run the Esurient ETL job:
 
 * Run `bin/esurient -j hdfs:///full/path/to/your/table-snapshot-job.properties` to execute the db snapshot job on the cluster. The default job will place one gzip file on HDFS for each Esurient process used in the job. The number will depend on the nature of the database (sharded, etc.)
 
-Once you have bootstrapped the table, you can re-run the setup script to create a properties file appropriate for regular "update" runs over a time window. Running the update job on a regular basis will keep the accumulated table data fresh. Deduping the bootstrap and all accumulated update snapshots to obtain only the latest copy of each row is best performed in the Reduce stage of a MapReduce post-processin job.
+Once you have bootstrapped the table, you can re-run the setup script to create a properties file appropriate for regular "update" runs over a time window. Running the update job on a regular basis will keep the accumulated table data fresh. Deduping the bootstrap and all accumulated update snapshots to obtain only the latest copy of each row is best performed in a MapReduce post-processing job.
 
