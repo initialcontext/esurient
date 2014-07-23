@@ -12,11 +12,13 @@ import java.sql.{ResultSet,ResultSetMetaData,Statement}
  * Note: The caller is responsible for closing the Database object to avoid mem leaks.
  */
 trait Database {
+
   /**
    * The UNIX epoch stamp forming the "end" of the database snapshot window
    * (used in calls to Database#updateTableSnapshot only)
    */
   val Now = ((new java.util.Date).getTime / 1000).asInstanceOf[Int]
+
 
   /**
    * Perform a full table bootstrap, pulling all records to HDFS.
@@ -27,6 +29,7 @@ trait Database {
    *          reponsible for closing the ResultSet to avoid mem leaks.
    */
   def fullTableSnapshot: Option[ResultSet] = { None }
+
 
   /**
    * Perform an update query, pulling in only records updated between Now and
@@ -40,11 +43,6 @@ trait Database {
    */
   def updateTableSnapshot: Option[ResultSet] = { None }
 
-  /**
-   * Perform JDBC vendor-specific functions on a newly-created db Statement object.
-   * @param statement the Statement in question.
-   */
-  def configureStatement(statment: Statement): Unit = { }
 
   /**
    * Obtain table schema in JSON format, as a String. The caller will presumably write this
@@ -53,6 +51,7 @@ trait Database {
    * @param a String representing a JSONArray of table columns and their metadata.
    */
   def getTableSchema: String = { "[ ]" }
+
 
   /**
    * Close the Database connnection. Owner of the Database object must call this to avoid JDBC mem leaks.

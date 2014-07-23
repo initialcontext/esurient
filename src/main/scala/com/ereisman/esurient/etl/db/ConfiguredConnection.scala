@@ -1,6 +1,8 @@
 package com.ereisman.esurient.etl.db
 
 
+import java.sql.Statement
+
 import java.util.Properties
 
 
@@ -24,4 +26,12 @@ trait ConfiguredConnection {
 
     props
   }
+
+
+  /**
+   * Perform JDBC vendor-specific functions on a newly-created db Statement object.
+   * @param statement the Statement in question.
+   */
+  def configureStatement(statment: Statement): Unit = { }
+
 }

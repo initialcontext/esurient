@@ -4,7 +4,7 @@ This package is the implementation for an example Esurient job that pulls data d
 ### Running an example job ###
 To set up and run the Esurient ETL job:
 
-* Place a file on HDFS containing a JSON-serialized list of databases and connection info. Alternately, implement your own DatabaseConfigExtractor subclass (see `etl.format` package)
+* Place a file on HDFS containing a JSON-serialized list of mappings of database name => DSN (connection info.) Alternately, you can implement your own DatabaseConfigExtractor subclass. See `etl.format` package.
 
 * Run `bin/setup-etl-job` supplying the args needed to customize the run (password, db name to look up in JSON config file, update or bootstrap table mode, etc.) - See `EsurientEtlMetadataManager` for examples of args you can pass.
 
