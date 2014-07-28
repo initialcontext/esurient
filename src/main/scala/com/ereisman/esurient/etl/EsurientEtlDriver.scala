@@ -79,6 +79,9 @@ class EsurientEtlDriver(
         pingMetrics(recordCounter)
       }
     } while (thereAreMoreResults)
+
+    // hit metrics one more time with final total
+    pingMetrics(recordCounter)
   }
 
 
@@ -141,7 +144,11 @@ class EsurientEtlDriver(
 
   /**
    * HDFS Path and output file name will be in this format:
-   * /base/hdfs/path/tablename_snapmode_unixepoch_taskid
+   * /base/hdfs/path/data/tablename_snapmode_unixepoch_taskid.suffix
+   *
+   * Where "data" dir is hardcoded to separate job Properties file from data files.
+   * This is because std Hadoop post-processing jobs will want to read whole dir of
+   * gzip files at once, having props/schema files in there will confuse them.
    *
    * @param conf the job Configuration
    * @return the HDFS Path of the file where ETL data will be persisted
@@ -149,7 +156,8 @@ class EsurientEtlDriver(
   private def getOutputPath(conf: Configuration): Path = {
     new Path(
       conf.get(ES_DB_BASE_OUTPUT_PATH, "ERROR_NO_BASE_PATH") + "/" +
-      conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED") + "/" +
+      conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED") +
+      "/data/" +
       List(
         conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED"),
         conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED"),
