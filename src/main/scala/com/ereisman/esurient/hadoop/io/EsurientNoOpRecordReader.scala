@@ -23,19 +23,24 @@ class EsurientNoOpRecordReader extends RecordReader[NullWritable, NullWritable] 
 
   override def close: Unit = { }
 
+
   override def getProgress: Float = recordSeenOnce match {
     case false => 0.0f
     case _ => 1.0f
   }
 
+
   override def getCurrentKey = EsurientNoOpRecordReader.Key
   override def getCurrentValue = EsurientNoOpRecordReader.Value
 
+
   override def initialize(split: InputSplit, tac: TaskAttemptContext): Unit = { }
+
 
   override def nextKeyValue = recordSeenOnce match {
     case false => recordSeenOnce = true ; true
     case _ => false
   }
+
 }
 

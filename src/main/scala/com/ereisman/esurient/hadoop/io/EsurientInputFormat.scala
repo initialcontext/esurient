@@ -13,18 +13,15 @@ import com.ereisman.esurient.EsurientConstants._
  */
 class EsurientInputFormat extends InputFormat[NullWritable, NullWritable] {
 
-  /** the Configuration must also be populated with numTasks entries of the form:
-   * ("esurient.task.1" -> "table/shard, limit/offset etc")
-  * ("esurient.task.2" -> "table/shard, limit/offset etc")
-  * ...and so on, to assign work to each Mapper spawned here.
-  */
   override def getSplits(jc: JobContext): java.util.List[InputSplit] = {
     val numTasks = jc.getConfiguration.getInt(ES_TASK_COUNT, ES_TASK_COUNT_DEFAULT)
+
     // return a Java list of numTasks worth of dummy InputSplits to fool Hadoop
     (1 to numTasks).foldLeft(new java.util.LinkedList[InputSplit]) {
       (acc, i) => acc.add(new EsurientInputSplit(i, numTasks)) ; acc
-    } 
+    }
   }
+
 
   override def createRecordReader(split: InputSplit, tac: TaskAttemptContext): RecordReader[NullWritable, NullWritable] = {
     new EsurientNoOpRecordReader

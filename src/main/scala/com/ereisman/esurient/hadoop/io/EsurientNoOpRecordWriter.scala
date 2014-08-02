@@ -14,8 +14,10 @@ class EsurientNoOpRecordWriter extends RecordWriter[NullWritable, NullWritable] 
 
   override def close(tac: TaskAttemptContext): Unit = { }
 
+
   override def write(key: NullWritable, value: NullWritable): Unit = {
     throw new IllegalStateException("ERROR: EsurientNoOpRecordWriter should _never_ be written to!")
   }
+
 }
 

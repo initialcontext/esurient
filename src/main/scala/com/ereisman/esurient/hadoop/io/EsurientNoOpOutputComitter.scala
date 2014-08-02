@@ -1,5 +1,6 @@
 package com.ereisman.esurient.hadoop.io
 
+
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.{JobContext,TaskAttemptContext}
 import org.apache.hadoop.mapreduce.OutputCommitter

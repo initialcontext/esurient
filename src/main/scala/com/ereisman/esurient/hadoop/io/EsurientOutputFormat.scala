@@ -15,13 +15,15 @@ class EsurientOutputFormat extends OutputFormat[NullWritable, NullWritable] {
 
   override def checkOutputSpecs(jc: JobContext): Unit = { }
 
-  // TODO: check conf fields and optionally change the committer to something more useful!
+
   override def getOutputCommitter(tac: TaskAttemptContext): OutputCommitter = {
     new EsurientNoOpOutputCommitter
   }
 
+
   override def getRecordWriter(tac: TaskAttemptContext): RecordWriter[NullWritable, NullWritable] = {
     new EsurientNoOpRecordWriter
   }
+
 }
 
