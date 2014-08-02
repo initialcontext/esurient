@@ -47,11 +47,8 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
 
 
   /**
-   * Execute a user defined (or generic EsurientTask) job that takes the Hadoop
-   * Configuration object and pulls all arguments and task metadata from it,
-   * including the task's framework-assigned unique ID number. If this is a user
-   * defined job, the full name of the class to instantiate is also expected to
-   * be stored in the Hadoop Configuration.
+   * Instantiate the EsurientTask (example or user-defined) for execution
+   * in the run() method.
    *
    * @param context the Mapper#Context for this job
    */
@@ -68,7 +65,7 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
 
 
   /**
-   * If the user set the Configuration key (via cmd line args or site.xml file)
+   * If the user set the Configuration key (via the job.properties file)
    * then we can auto-heartbeat at a fixed interval in a background thread.
    */
   private def checkAutoHeartbeatSelected(context: EsurientTask.Context, stats: EsurientStats): Unit = {
@@ -80,9 +77,8 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
 
 
   /**
-   * A User can define a class extending the EsurientTask abstract class that takes
-   * a Hadoop Configuration as its only constructor argument, and the framework will
-   * run it as a generic task with a unique ID rather than running EsurientEtlTask.
+   * A User can define a class extending the EsurientTask to perform user-defined
+   * work on the cluster - see the <code>examples</code> package for more info.
    *
    * @param context the job context, including a Hadoop Configuration that will
    *                provide unique task id and task metadata.
@@ -113,5 +109,6 @@ class EsurientMapper extends Mapper[NullWritable, NullWritable, NullWritable, Nu
   override def map(dummyK: NullWritable, dummyV: NullWritable, context: EsurientTask.Context): Unit = { /* no-op */ }
 
   override def cleanup(context: EsurientTask.Context): Unit = { /* do some Hadoop-side cleanup here if needed */ }
+
 }
 

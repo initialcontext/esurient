@@ -18,7 +18,9 @@ import org.apache.log4j.Logger
  */
 object EsurientHeartbeater {
   val LOG = Logger.getLogger(classOf[EsurientHeartbeater])
+
   val MB_SIZE = 1024 * 1024
+
   val DATE_FORMATTER = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
 }
 
@@ -69,5 +71,6 @@ class EsurientHeartbeater(context: EsurientTask.Context, stats: EsurientStats, d
       )
     )
   }
+
 }
 
