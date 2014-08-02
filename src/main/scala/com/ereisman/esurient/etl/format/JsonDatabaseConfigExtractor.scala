@@ -85,10 +85,9 @@ class JsonDatabaseConfigExtractor extends DatabaseConfigExtractor {
 
   private def loadDbConfig(dfs: FileSystem, conf: Configuration): Map[String, Map[String, String]] = {
     val dbConfPath = new Path(conf.get(ES_DB_CONFIG_FILE_PATH, "ERROR_NO_DATABASE_CONFIG_PATH_FOUND"))
-    val javaMap: java.util.Map[String, Any] =
-      Json.parse[java.util.LinkedHashMap[String, Any]](
-        Source.fromInputStream(dfs.open(dbConfPath), "UTF-8")
-      )
+    val javaMap = Json.parse[java.util.Map[String, Any]](
+      Source.fromInputStream(dfs.open(dbConfPath), "UTF-8")
+    )
     // convert map to Scala before returning
     parseDbConfigFile(javaMap.toMap)
   }
@@ -96,8 +95,7 @@ class JsonDatabaseConfigExtractor extends DatabaseConfigExtractor {
 
   // Map the text-based database config file and format into more accessible map layout
   private def parseDbConfigFile(dbConf: Map[String, Any]): Map[String, Map[String, String]] = {
-    val dbMeta: java.util.Map[String, Any] =
-      dbConf("database").asInstanceOf[java.util.LinkedHashMap[String, Any]]
+    val dbMeta = dbConf("database").asInstanceOf[java.util.Map[String, Any]]
 
     dbMeta.toMap.keys.map { (key: String) =>
       val raw = dbMeta(key).asInstanceOf[String]
