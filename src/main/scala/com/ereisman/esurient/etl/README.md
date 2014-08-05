@@ -4,13 +4,13 @@ This package is the implementation for an example Esurient job that pulls data d
 ### Running an example job ###
 To set up and run the Esurient ETL job:
 
-* Place a file on HDFS containing a JSON-serialized list of mappings of database name => DSN (connection info.) Alternately, you can implement your own DatabaseConfigExtractor subclass. See `etl.format` package.
+* Place a file on HDFS containing a JSON-serialized list of mappings of database name => DSN. Alternately, you can implement your own `DatabaseConfigExtractor` subclass. See `etl.format` package.
 
 * Run `bin/setup-etl-job` supplying the args needed to customize the run (password, db name to look up in JSON config file, update or bootstrap table mode, etc.) - See `EsurientEtlMetadataManager` for examples of args you can pass.
 
-* Setup script, if it was able to connect to the db you selected, will have deposited 2 files on hdfs: a JSON-based schema of the table to be snapshotted, and a Java Properties files configured for a db snapshot job on that table.
+* The setup script, if successful, generates two files: a JSON-based schema of the table to be snapshotted, and a Java Properties files configured for a db snapshot job on that table. Both are saved on HDFS at a location specified in the script arguments.
 
-* Run `bin/esurient -j hdfs:///full/path/to/your/table-snapshot-job.properties` to execute the db snapshot job on the cluster. The default job will place one gzip file on HDFS for each Esurient process used in the job. The number will depend on the nature of the database (sharded, etc.)
+* Run `bin/esurient -j hdfs:///full/path/to/your/table-snapshot-job.properties` to execute the db snapshot job on the cluster.
 
 Once you have bootstrapped the table, you can re-run the setup script to create a properties file appropriate for regular "update" runs over a time window. Running the update job on a regular basis will keep the accumulated table data fresh. Deduping the bootstrap and all accumulated update snapshots to obtain only the latest copy of each row is best performed in a MapReduce post-processing job.
 
