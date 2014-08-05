@@ -6,9 +6,9 @@ A Lightweight framework for safely running generic distributed computing process
 Written in Scala, the user can define a driver class extending `com.ereisman.esurient.EsurientTask` and define a single
 `execute` method.
 
-There are no keys and values, no mandatory sort, shuffle, or reduce stages. Task's progress heartbeats can be handled manually by the user's task or automatically. Your tasks piggyback on Hadoop's own fault-tolerance mechanisms. Each task can be assigned work in the job's properties file via unique task IDs.
+There are no keys and values, no mandatory sort, shuffle, or reduce stages. Task's progress heartbeats can be handled manually by the user's task or automatically. Your tasks piggyback on Hadoop's own fault-tolerance mechanisms. See the code in the `examples` package for more ideas.
 
-See the code in the `examples` package for more ideas. Esurient is ideal for users who need to do distributed computing that isn't a natural fit for MapReduce. Some examples:
+Some things you might do with Esurient:
 
 * Node-local or HDFS filesystem chores in a distribtued way
 * Database snapshots or other ETL (See Esurient example jobs and `etl` package)
@@ -40,13 +40,13 @@ You may place user-defined code into the examples package inside the Esurient pr
 
 
 ### Running Jobs ###
-Before executing an Esurient job, place all user-defined keys and values into a Java Properties file. These will be injected into the Hadoop Configuration at runtime by the framework. Examine the `esurient-example-job.properties` file as a basis for your own job configs. To execute user-defined task code, the properties file must include the fully-qualified classname of the user's EsurientTask implementation.
+Before executing an Esurient job, place all user-defined keys and values into a Java Properties file. These will be injected into the Hadoop Configuration at runtime by the framework. Examine the `esurient-example-job.properties` file as a basis for your own job configs. To execute user-defined tasks, the properties file must include the fully-qualified classname of the user's task implementation.
 
-Execute `bin/esurient -p path/to/job.properties -j path/to/esurient.jar`, or alternately run `hadoop jar` parameterized as shown in `bin/esurient` addition arguments to `bin/esurient` are routed to it's internal `hadoop jar` call.
+Execute `bin/esurient -p path/to/job.properties -j path/to/esurient.jar`, or alternately run `hadoop jar` parameterized as shown in `bin/esurient` additional arguments to `bin/esurient` are routed to it's internal `hadoop jar` call.
 
 
 ### ETL With Esurient ###
-The Esurient `etl` package includes a fully functional, customizable, database snapshot job that has been tested on production workloads. See the README.md in the `src/main/scala/com/ereisman/esurient/etl` directory for instructions.
+The Esurient `etl` package includes a customizable database snapshot job that has been tested on production workloads. See the README.md in the `src/main/scala/com/ereisman/esurient/etl` directory for instructions.
 
 
 ### Warning ###
