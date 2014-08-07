@@ -13,7 +13,27 @@ set -e
 # only need to be regenerated when the underlying DB table schema
 # is altered, or the nature of the snapshot job needs to change.
 #
-# If altering the existing job properties file by hand is easier
+# USAGE:
+# <code>
+# bin/setup-etljob \
+#   --dbConfig /hdfs/path/to/db/config/file.json \
+#   --outputPath /hdfs/path/to/table/dir \
+#   --database db_name \
+#   --dbType mysql|postgres \
+#   --table table_name \
+#   --mode bootstrap|update \
+#   --dbPass password \
+#   --metricsHostPort host:port \
+#   --updateCol col_name \
+#   --window updateWindowSecs \
+#   --compression gzip
+# </code>
+#
+# Where 'VERSION' is whatever your current Esurient build produces.
+#
+# Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
+#       The <code>--metricsHostPort</code>, <code>--compression</code> args are also optional.
+# if altering the existing job properties file by hand is easier
 # for small tweaks, do that instead.
 #
 #
