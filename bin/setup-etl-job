@@ -12,6 +12,7 @@ set -e
 # Once the properties and schema files are generated, they will
 # only need to be regenerated when the underlying DB table schema
 # is altered, or the nature of the snapshot job needs to change.
+# You can also alter the existing files by hand when convenient.
 #
 # USAGE:
 # <code>
@@ -21,23 +22,19 @@ set -e
 #   --database db_name \
 #   --dbType mysql|postgres \
 #   --table table_name \
-#   --mode bootstrap|update \
 #   --dbPass password \
 #   --metricsHostPort host:port \
 #   --updateCol col_name \
+#   --dedupCol col_name \
 #   --window updateWindowSecs \
 #   --compression gzip
 # </code>
 #
 # Where 'VERSION' is whatever your current Esurient build produces.
 #
-# Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
-#       The <code>--metricsHostPort</code>, <code>--compression</code> args are also optional.
-# if altering the existing job properties file by hand is easier
-# for small tweaks, do that instead.
+# Note: The <code>--metricsHostPort</code>, <code>--compression</code>, and <code>--window</code> args are optional.
 #
-#
-# NOTE: MANY CLI ARGS are required here to bootstrap a new snapshot job.
+#       MANY CLI ARGS are required here to bootstrap a new snapshot job.
 #       It is recommended that you check out the full arg list at:
 #
 #  src/main/scala/com/ereisman/esurient/etl/EsurientEtlMetadataManager.scala

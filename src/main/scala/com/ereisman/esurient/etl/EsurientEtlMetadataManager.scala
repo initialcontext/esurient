@@ -22,14 +22,14 @@ object EsurientEtlMetadataManager {
 }
 
 /**
- * Scala utility that generates JSON-based table schema file and Esurient
- * job.properties on HDFS in preparation for an EsurientEtlTask snapshot
- * of the table named in the command-line args.
+ * Utility that generates JSON-based table schema file and two Esurient
+ * job properties files. One should be specified for Esurient ETL runs
+ * that bootstrap a table, the other is for running periodic updates over
+ * a time window.
  *
  * Note: This assumes the use of <code>--dbConfig</code> which specifies the
  * location of a file on HDFS that contains all database connection metadata
- * that must be integrated into the generated job properties file. That file
- * will be used to configure table snapshot jobs run using EsurientEtlTask.
+ * that must be integrated into the generated job properties file.
  *
  * USAGE:
  * <code>
@@ -40,18 +40,17 @@ object EsurientEtlMetadataManager {
  *   --database db_name \
  *   --dbType mysql|postgres \
  *   --table table_name \
- *   --mode bootstrap|update \
  *   --dbPass password \
  *   --metricsHostPort host:port \
  *   --updateCol col_name \
+ *   --dedupCol col_name \ 
  *   --window updateWindowSecs \
  *   --compression gzip
  * </code>
  *
- * Where 'VERSION' is whatever your current Esurient build produces.
+ * Where 'VERSION' is whatever your current Esurient build version.
  *
- * Note: The <code>--window</code> and <code>--updateCol</code> args are used only in 'update' mode.
- *       The <code>--metricsHostPort</code>, <code>--compression</code> args are also optional.
+ * Note: The <code>--metricsHostPort</code>, <code>--compression</code> args are optional.
  */
 class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuration, val extractor: DatabaseConfigExtractor) {
   import com.ereisman.esurient.etl.EsurientEtlMetadataManager.LOG
@@ -96,8 +95,20 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
     val props: Properties = getEtlBaseProperties
     extractor.extractDatabaseConfigs(dfs, conf, props)
 
-    // write the new ETL job properties file out, configuring a table snapshot
-    val propsPath = getJobPropertiesFile
+    // write a job properties file to HDFS for bootstrapping this table
+    val bootstrapPath = getJobPropertiesFile("bootstrap")
+    writeJobPropsToHdfs(bootstrapPath, props)
+
+    // write a job properties file to HDFS for updating this table
+    val updatePath = getJobPropertiesFile("update")
+    if (props.getProperty(ES_DB_MODE) == null)
+      throw new RuntimeException("Caller must set --updateCol in command-line args. Aborting.")
+    props.setProperty(ES_DB_MODE, "update")
+    writeJobPropsToHdfs(updatePath, props)
+  }
+
+
+  private def writeJobPropsToHdfs(propsPath: Path, props: Properties): Unit = {
     val stream = dfs.create(propsPath, true)
     try {
       LOG.info("Updating job properties file for table snapshot: " + propsPath)
@@ -141,19 +152,19 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       "mapred.child.java.opts"    -> "-Xmx2G -Xms1G",
       // ETL-specific configs
       ES_DB_PASSWORD              -> conf.get(ES_DB_PASSWORD, error),
-      ES_DB_MODE                  -> conf.get(ES_DB_MODE, error),
+      ES_DB_MODE                  -> "bootstrap", // default setting
       ES_DB_TABLE_NAME            -> conf.get(ES_DB_TABLE_NAME, error),
-      // ETL jobs that supply a monitoring host:port use table name for monitoring key
+      // ETL jobs that supply a monitoring host:port use table name in monitoring key names
       ES_METRICS_KEY              -> conf.get(ES_DB_TABLE_NAME, error),
-      ES_METRICS_HOST_PORT        -> conf.get(ES_METRICS_HOST_PORT, ""), // "" will default EsurientStats to no-op mode
+      ES_METRICS_HOST_PORT        -> conf.get(ES_METRICS_HOST_PORT, ""), // default to 'no monitoring'
       ES_HEARTBEAT_METRICS_MSG    -> conf.get(ES_HEARTBEAT_METRICS_MSG, ES_DB_HEARTBEAT_METRICS_MSG_DEFAULT),
       ES_DB_BASE_OUTPUT_PATH      -> conf.get(ES_DB_BASE_OUTPUT_PATH, error),
       ES_DB_DATABASE              -> conf.get(ES_DB_DATABASE, error),
       ES_DB_TYPE                  -> conf.get(ES_DB_TYPE, error),
-      // TODO: make this test pluggable - there are many better ways to determine if table is sharded or not
-      ES_DB_SHARDED_TABLE         -> { if (conf.get(ES_DB_DATABASE, error).contains("shard")) "true" else "false" },
+      ES_DB_SHARDED_TABLE         -> { if (conf.get(ES_DB_DATABASE, error).contains("_shard")) "true" else "false" },
       ES_DB_UPDATE_WINDOW_SECS    -> conf.getInt(ES_DB_UPDATE_WINDOW_SECS, ES_DB_UPDATE_WINDOW_SECS_DEFAULT).toString,
-      ES_DB_UPDATE_COLUMN         -> conf.get(ES_DB_UPDATE_COLUMN, ES_DB_UPDATE_COLUMN_DEFAULT),
+      ES_DB_UPDATE_COLUMN         -> conf.get(ES_DB_UPDATE_COLUMN), // this is mandatory ; also added to JSON schema
+      ES_DB_DEDUP_COLUMN          -> conf.get(ES_DB_DEDUP_COLUMN, error), // also added to JSON schema
       // General EsurientTask boilerplate
       ES_JOB_NAME                 -> composeJobName,
       ES_TASK_CLASS_NAME          -> "com.ereisman.esurient.examples.EsurientEtlTask",
@@ -188,13 +199,13 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
   }
 
 
-  private def getOutputFile(suffix: String): Path = {
+  private def getOutputFile(suffix: String, mode: String = ""): Path = { 
     new Path(
       List(
         conf.get(ES_DB_BASE_OUTPUT_PATH, "ERROR_NO_BASE_OUTPUT_PATH_SUPPLIED"),
         conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED"),
         conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED")
-      ).mkString("/") + suffix
+      ).mkString("/") + mode + suffix
     )
   }
 
@@ -202,7 +213,8 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
   private def getSchemaFile: Path = getOutputFile(ES_DB_SCHEMA_FILE_SUFFIX)
 
 
-  private def getJobPropertiesFile: Path = getOutputFile(ES_DB_JOB_PROPS_FILE_SUFFIX)
+  private def getJobPropertiesFile(jobMode: String): Path =
+    getOutputFile(ES_DB_JOB_PROPS_FILE_SUFFIX, "-" + jobMode)
 
 
   @tailrec private def parseArgsIntoConf(args: List[String]): Unit = {
@@ -214,9 +226,9 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       case "--database" :: db :: tail         => conf.set(ES_DB_DATABASE, db)
       case "--dbType" :: dbtype :: tail       => conf.set(ES_DB_TYPE, dbtype)
       case "--dbPass" :: pass :: tail         => conf.set(ES_DB_PASSWORD, pass)
-      case "--mode" :: mode :: tail           => conf.set(ES_DB_MODE, mode)
       case "--window" :: secs :: tail         => conf.setInt(ES_DB_UPDATE_WINDOW_SECS, secs.toInt)
-      case "--updateCol" :: col :: tail       => conf.set(ES_DB_UPDATE_COLUMN, col)
+      case "--dedupCol" :: dcol :: tail       => conf.set(ES_DB_DEDUP_COLUMN, dcol)
+      case "--updateCol" :: ucol :: tail      => conf.set(ES_DB_UPDATE_COLUMN, ucol)
       case "--metricsHostPort" :: mhp :: tail => conf.set(ES_METRICS_HOST_PORT, mhp)
       case "--metricsMsg" :: mm :: tail       => conf.set(ES_HEARTBEAT_METRICS_MSG, mm)
       case "--compression" :: codec :: tail   => conf.set(ES_DB_OUTPUT_COMP_TYPE, codec)

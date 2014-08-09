@@ -19,7 +19,9 @@ import com.ereisman.esurient.etl.EtlUtils
 
 
 object JdbcDatabase {
-  val LOG = Logger.getLogger(classOf[JdbcDatabase])
+  val LOG           = Logger.getLogger(classOf[JdbcDatabase])
+  val UPDATE_COLUMN = "UPDATE_COLUMN"
+  val DEDUP_COLUMN  = "DEDUP_COLUMN"
 }
 
 
@@ -27,7 +29,7 @@ object JdbcDatabase {
  * Abstracts awway DB-agnostic JDBC driver boilerplate from the DB-specific subclasses.
  */
 class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) extends Database with ConfiguredConnection {
-  import com.ereisman.esurient.etl.db.JdbcDatabase.LOG
+  import com.ereisman.esurient.etl.db.JdbcDatabase._
   // Initialize the specified JDBC Driver.
   Class.forName(driver).newInstance
   // Dastabase state, some of which might be reset during this object's lifetime.
@@ -161,12 +163,15 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
           // Generate Schema JSON, transform to String
           Json.generate(
             (1 to metaData.getColumnCount).map { index: Int =>
+              val colName = metaData.getColumnName(index)
               Map[String, Any](
-                "column" -> index,  
-                "name" -> metaData.getColumnName(index),
-                "type" -> metaData.getColumnTypeName(index),
-                "class" -> metaData.getColumnClassName(index),
-                "primary" -> primaryKeys.contains(metaData.getColumnName(index))
+                "column"   -> index,  
+                "name"     -> colName,
+                "type"     -> metaData.getColumnTypeName(index),
+                "class"    -> metaData.getColumnClassName(index),
+                "primary"  -> primaryKeys.contains(colName),
+                "nullable" -> metaData.isNullable(index),
+                "other"    -> getOtherMetaData(colName) 
               )
             }.toList ++ appendShardId(metaData.getColumnCount + 1)
           ).toString
@@ -179,17 +184,30 @@ class JdbcDatabase(conf: Configuration, driver: String, val jdbcScheme: String) 
   }
 
 
+  private def getOtherMetaData(col: String): String = {
+    val updateCol = conf.get(ES_DB_UPDATE_COLUMN, "")
+    val dedupCol  = conf.get(ES_DB_DEDUP_COLUMN, "")
+    col match {
+      case `updateCol` => JdbcDatabase.UPDATE_COLUMN
+      case `dedupCol`  => JdbcDatabase.DEDUP_COLUMN
+      case _         => ""
+    }
+  }
+
+
   // if this is a sharded table, append the shard id to the schema
   private def appendShardId(columnIndex: Int): List[Map[String, Any]] = {
       conf.getBoolean(ES_DB_SHARDED_TABLE, false) match {
         case true   => {
           List(
             Map[String, Any](
-              "column"  -> columnIndex,
-              "name"    -> "shard_id",
-              "type"    -> "INT",
-              "class"   -> "java.lang.Integer",
-              "primary" -> "false"
+              "column"   -> columnIndex,
+              "name"     -> "shard_id",
+              "type"     -> "INT",
+              "class"    -> "java.lang.Integer",
+              "primary"  -> "false",
+              "nullable" -> "0",
+              "other"    -> ""
             )
           )
         }

@@ -52,7 +52,8 @@ object EsurientConstants {
     val ES_DB_CONFIG_FILE_PATH                = "esurient.db.config.file.path" // --dbConfig path to db metadata file on HDFS
     val ES_DB_OUTPUT_FORMAT                   = "esurient.db.output.format"
     val ES_DB_BASE_OUTPUT_PATH                = "esurient.db.base.output.path"
-    val ES_DB_UPDATE_COLUMN                   = "esurient.db.update.column" // to use in update mode
+    val ES_DB_UPDATE_COLUMN                   = "esurient.db.update.column" // to use in update mode & schema gen
+    val ES_DB_DEDUP_COLUMN                   = "esurient.db.dedup.column"   // to use in update mode & schema gen
     val ES_DB_UPDATE_WINDOW_SECS              = "esurient.db.update.window.secs" // also for update mode
     val ES_DB_OUTPUT_COMP_TYPE                = "esurient.db.output.compression.type"
 
