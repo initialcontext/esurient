@@ -90,10 +90,10 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
 
   // read latest database config JSON and rewrite the job properties for the next snap run
   private def updateJobPropertiesFile: Unit = {
-
     // inject values into a Properties object that will become the ETL job's config file
     val props: Properties = getEtlBaseProperties
     extractor.extractDatabaseConfigs(dfs, conf, props)
+    setJobModeProps(props, "bootstrap")
 
     // write a job properties file to HDFS for bootstrapping this table
     val bootstrapPath = getJobPropertiesFile("bootstrap")
@@ -101,9 +101,10 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
 
     // write a job properties file to HDFS for updating this table
     val updatePath = getJobPropertiesFile("update")
-    if (props.getProperty(ES_DB_MODE) == null)
+    if (props.getProperty(ES_DB_UPDATE_COLUMN) == null) {
       throw new RuntimeException("Caller must set --updateCol in command-line args. Aborting.")
-    props.setProperty(ES_DB_MODE, "update")
+    }
+    setJobModeProps(props, "update")
     writeJobPropsToHdfs(updatePath, props)
   }
 
@@ -152,7 +153,6 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       "mapred.child.java.opts"    -> "-Xmx2G -Xms1G",
       // ETL-specific configs
       ES_DB_PASSWORD              -> conf.get(ES_DB_PASSWORD, error),
-      ES_DB_MODE                  -> "bootstrap", // default setting
       ES_DB_TABLE_NAME            -> conf.get(ES_DB_TABLE_NAME, error),
       // ETL jobs that supply a monitoring host:port use table name in monitoring key names
       ES_METRICS_KEY              -> conf.get(ES_DB_TABLE_NAME, error),
@@ -166,7 +166,6 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
       ES_DB_UPDATE_COLUMN         -> conf.get(ES_DB_UPDATE_COLUMN), // this is mandatory ; also added to JSON schema
       ES_DB_DEDUP_COLUMN          -> conf.get(ES_DB_DEDUP_COLUMN, error), // also added to JSON schema
       // General EsurientTask boilerplate
-      ES_JOB_NAME                 -> composeJobName,
       ES_TASK_CLASS_NAME          -> "com.ereisman.esurient.examples.EsurientEtlTask",
       ES_TASK_AUTO_HEARTBEAT      -> "true",
       ES_LOG_HEARTBEATS           -> "true"
@@ -175,6 +174,11 @@ class EsurientEtlMetadataManager(val args: Array[String], val conf: Configuratio
     props
   }
 
+  def setJobModeProps(props: Properties, mode: String): Unit = {
+    conf.set(ES_DB_MODE, mode)
+    props.setProperty(ES_DB_MODE, mode)
+    props.setProperty(ES_JOB_NAME, composeJobName)
+  }
 
   // make a job name for the JT to display that tells us something useful about the job run.
   def composeJobName: String = {
