@@ -5,8 +5,7 @@ import java.sql.{ResultSet,SQLException}
 import java.io.OutputStream
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.{FileSystem,Path,PathFilter}
 import org.apache.log4j.Logger
 
 import com.ereisman.esurient.etl.db.{Database,DatabaseFactory}
@@ -41,16 +40,18 @@ class EsurientEtlDriver(
 
   // The contents of these fields are subject to reinitialization and their
   // lifecycles are managed by this task. Therefore, they are mutable.
-  var db: Database = null
-  var rs: ResultSet = null
-  var dfs: FileSystem = null
-  var stream: OutputStream = null
-  var formatter: EtlOutputFormatter = null
-  var outPath: Path = null
+  private var db: Database                  = null
+  private var rs: ResultSet                 = null
+  private var dfs: FileSystem               = null
+  private var stream: OutputStream          = null
+  private var formatter: EtlOutputFormatter = null
+  private var chunkNum: Int                 = 0
+  private var chunkSize: Long               = 0L
+  private var maxChunkSize: Long            = streamGenerator.getMaxChunkSize
 
   ///// EXECUTE THE JOB /////
   try {
-    performSnapshot(conf)
+    performSnapshot
   } catch {
     case ex: Throwable => blowUp(LOG, ex)
   } finally {
@@ -60,13 +61,13 @@ class EsurientEtlDriver(
 
 
   // (re)initialize class state for this snap attempt, execute the snapshot
-  private def performSnapshot(conf: Configuration): Unit = {
-    // initialize filesystem resources
-    initializeFsResources
+  private def performSnapshot: Unit = {
+    // init the FileSystem and set up the first output file chunk
+    initNextFileChunk
 
     // obtain db connection and execute query
     db = DatabaseFactory.getDatabase(conf)
-    rs = submitQuery(conf)
+    rs = submitQuery
 
     // set up metrics counter for records processed
     var recordCounter: Long = 0L
@@ -74,9 +75,9 @@ class EsurientEtlDriver(
     // parse & clean each record, then write to HDFS
     do {
       while (rs.next && !rs.isAfterLast) {
-        outputFormatter.formatRecord(rs, stream)
+        chunkSize += outputFormatter.formatRecord(rs, stream)
         recordCounter += 1L
-        pingMetrics(recordCounter)
+        checkPingMetricsAndChunkSize(recordCounter)
       }
     } while (thereAreMoreResults)
 
@@ -85,23 +86,46 @@ class EsurientEtlDriver(
   }
 
 
-  private def pingMetrics(counter: Long): Unit = {
+  // check if chunk file is too big or we need to ping metrics every
+  // REPORT_METRIC_PERIOD record writes from DB => output stream.
+  private def checkPingMetricsAndChunkSize(counter: Long): Unit = {
     if (counter % REPORT_METRIC_PERIOD == 0) {
-      stats.pushMetric(
-        Map[String, String](
-          "msgFormat"   -> RECORDS_PROCESSED_METRICS_MSG_FORMAT,
-          "metricValue" -> counter.toString,
-          "timeStamp"   -> (System.currentTimeMillis / 1000L).toString
-        )
-      )
+      pingMetrics(counter)
+      checkExceedChunkSize
     }
   }
 
 
-  private def initializeFsResources: Unit = {
-    dfs = EtlUtils.getDfs(conf)
-    outPath = getOutputPath(conf)
-    stream = streamGenerator.getOutputStream(dfs, outPath)
+  private def pingMetrics(counter: Long): Unit = {
+    stats.pushMetric(
+      Map[String, String](
+        "msgFormat"   -> RECORDS_PROCESSED_METRICS_MSG_FORMAT,
+        "metricValue" -> counter.toString,
+        "timeStamp"   -> (System.currentTimeMillis / 1000L).toString
+      )
+    )
+  }
+
+
+  // start a new file chunk if the one we're writing has gotten too big
+  private def checkExceedChunkSize: Unit = {
+    if (maxChunkSize != ES_DB_NO_CHUNK_SIZE_SET && chunkSize > maxChunkSize) initNextFileChunk
+  }
+
+
+  // This can be called multiple times to start each new chunk
+  // if the max chunk size is set for this output stream type.
+  private def initNextFileChunk: Unit = {
+    initHdfs
+    if (stream != null) { stream.flush; stream.close ; stream = null }
+    chunkSize = 0L
+    chunkNum += 1
+    stream = streamGenerator.getOutputStream(dfs, getOutputPath)
+  }
+
+
+  private def initHdfs: Unit = {
+    if (dfs == null) { dfs = EtlUtils.getDfs(conf) }
   }
 
 
@@ -114,7 +138,7 @@ class EsurientEtlDriver(
   }
 
 
-  private def submitQuery(conf: Configuration): ResultSet = {
+  private def submitQuery: ResultSet = {
     conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED") match {
       case ES_DB_BOOTSTRAP_MODE => db.fullTableSnapshot.get
       case ES_DB_UPDATE_MODE    => db.updateTableSnapshot.get
@@ -133,43 +157,58 @@ class EsurientEtlDriver(
 
   private def cleanupPartialOutput: Unit = {
     if (stream != null) { stream.flush ; stream.close }
-    if (dfs != null) {
-      dfs.exists(outPath) match {
-        case true => dfs.delete(outPath, false) ; Thread.sleep(ES_DB_QUICK_PAUSE_MILLIS)
-        case _    =>
-      }
+    initHdfs
+    for (val target <- dfs.listStatus(new Path(getBasePathString), allChunksFilter)) {
+      dfs.delete(target.getPath, false)
     }
   }
 
 
+  // get all chunk files from this timestamped run, for this table, by this task ID
+  private def allChunksFilter: PathFilter = {
+    val p = getOutputPath.toString
+    val filterGlob = p.substring(0, p.indexOf("chunk"))
+
+    new PathFilter { override def accept(path: Path): Boolean = { path.toString.contains(filterGlob) } }
+  }
+
+
+  private def getBasePathString: String = {
+      conf.get(ES_DB_BASE_OUTPUT_PATH, "ERROR_NO_BASE_PATH") + "/" +
+      conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED") +
+      "/data"
+  }
+
+
   /**
-   * HDFS Path and output file name will be in this format:
-   * /base/hdfs/path/data/tablename_snapmode_unixepoch_taskid.suffix
+   * Generates a full path/filename on HDFS for the current chunk we will write.
+   * HDFS Path and output file names will be in this format:
+   * /base/hdfs/path/to/tablename/data/tablename_snapmode_unixepoch_task_N_chunk_N.suffix
    *
    * Where "data" dir is hardcoded to separate job Properties file from data files.
    * This is because std Hadoop post-processing jobs will want to read whole dir of
    * gzip files at once, having props/schema files in there will confuse them.
    *
-   * @param conf the job Configuration
    * @return the HDFS Path of the file where ETL data will be persisted
    */
-  private def getOutputPath(conf: Configuration): Path = {
+  private def getOutputPath: Path = {
     new Path(
-      conf.get(ES_DB_BASE_OUTPUT_PATH, "ERROR_NO_BASE_PATH") + "/" +
-      conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED") +
-      "/data/" +
+      getBasePathString + "/" +
       List(
         conf.get(ES_DB_TABLE_NAME, "ERROR_NO_TABLE_NAME_SUPPLIED"),
         conf.get(ES_DB_MODE, "ERROR_NO_MODE_SUPPLIED"),
         conf.get(ES_JOB_TIMESTAMP, "ERROR_NO_JOB_TIMESTAMP_SUPPLIED"),
-        conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString
+        "task",
+        conf.getInt(ES_THIS_TASK_ID, ES_ERROR_CODE).toString,
+        "chunk",
+        chunkNum
       ).mkString("_") +
       streamGenerator.getFileTypeSuffix
     )
   }
 
 
-  private def closeResources(): Unit = {
+  private def closeResources: Unit = {
     if (stream != null) { stream.flush ; stream.close }
     if (dfs != null) { dfs.close }
     if (rs != null) { rs.close }

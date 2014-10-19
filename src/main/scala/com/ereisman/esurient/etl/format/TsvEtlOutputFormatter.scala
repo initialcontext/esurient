@@ -26,10 +26,12 @@ class TsvEtlOutputFormatter(val conf: Configuration) extends EtlOutputFormatter 
   val suffix = getShardIdSuffix(conf)
 
 
-  override def formatRecord(resultSet: ResultSet, hdfsStream: OutputStream): Unit = {
+  override def formatRecord(resultSet: ResultSet, hdfsStream: OutputStream): Long = {
     val buffer = getRowAsUtfBytes(resultSet)
     hdfsStream.write(buffer, 0, buffer.length)
     hdfsStream.write(ENDL, 0, ENDL.length)
+
+    (buffer.length + ENDL.length).toLong
   }
 
 

@@ -10,6 +10,6 @@ import java.sql.ResultSet
  */
 trait EtlOutputFormatter {
 
-  def formatRecord(resultSet: ResultSet, toHdfsFile: OutputStream): Unit = {  }
+  def formatRecord(resultSet: ResultSet, toHdfsFile: OutputStream): Long = { 0L }
 
 }

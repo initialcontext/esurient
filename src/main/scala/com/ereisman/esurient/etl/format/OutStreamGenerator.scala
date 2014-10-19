@@ -19,6 +19,8 @@ object OutStreamGenerator {
 class OutStreamGenerator(conf: Configuration) {
   import com.ereisman.esurient.etl.format.OutStreamGenerator.LOG
 
+  // some output formats are not splittable in Hadoop and must be chunked
+  def getMaxChunkSize: Long = ES_DB_NO_CHUNK_SIZE_SET
 
   def codecClassName: String = conf.get(ES_DB_OUTPUT_COMP_TYPE, ES_DB_OUTPUT_COMP_TYPE_DEFAULT) 
 

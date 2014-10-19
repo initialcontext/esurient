@@ -25,7 +25,7 @@ object EsurientConstants {
     // Hadoop Configuration Default Values /////////////////////////
     val ES_ERROR_CODE                         = -1
     val ES_TASK_COUNT_DEFAULT                 = 20
-    val BUFFER_SIZE                           = 65536 
+    val BUFFER_SIZE                           = 65536
     val ES_TASK_AUTO_HEARTBEAT_MILLIS_DEFAULT = 8000
     val ES_HEARTBEAT_METRICS_MSG_DEFAULT      = "esurient.heap.mb.%s.task%s %s" // %s is: job name, taskId, integral metric value
     val ES_METRICS_SEND_TIMEOUT               = 1000 // timeout fast if metrics services are sluggish
@@ -65,6 +65,7 @@ object EsurientConstants {
     val ES_DB_QUICK_PAUSE_MILLIS              = 1000
     val ES_DB_RETRY_SLEEP_MILLIS              = 5000
     val ES_DB_UPDATE_WINDOW_SECS_DEFAULT      = (86400 * 3) // 3 days
+    val ES_DB_NO_CHUNK_SIZE_SET               = -1L // some output formats are not splittable in Hadoop, must be chunked
     val ES_DB_BOOTSTRAP_MODE                  = "bootstrap"
     val ES_DB_UPDATE_MODE                     = "update"
     val ES_DB_UPDATE_COLUMN_DEFAULT           = "update_date"
